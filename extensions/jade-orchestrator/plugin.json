@@ -1,0 +1,15 @@
+{
+  "name": "jade-orchestrator",
+  "version": "0.1.0",
+  "description": "Agent orchestration plugin — task assignment, status tracking, checkpoint management",
+  "skills": [
+    "skills/contract-context.md",
+    "skills/role-awareness.md",
+    "skills/budget-enforcement.md"
+  ],
+  "commands": [
+    "commands/jade-assign.md",
+    "commands/jade-status.md",
+    "commands/jade-checkpoint.md"
+  ]
+}
