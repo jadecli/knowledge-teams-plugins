@@ -73,17 +73,22 @@ LAST_OUTPUT="$(echo "$HOOK_INPUT" | jq -r '.last_output // empty' 2>/dev/null ||
 # ── check completion promise ──────────────────────────────────────────────────
 
 if echo "$LAST_OUTPUT" | grep -q '<promise[^>]*status="fulfilled"'; then
-  # Task complete — calculate ROTS and exit.
-  VALUE_DELIVERED=1
+  # Task complete — extract ROTS value from output if provided, else record as pending.
+  # Agents may embed a rots_value in the promise tag: <promise status="fulfilled" rots_value="42.5">
+  ROTS_FROM_OUTPUT="$(echo "$LAST_OUTPUT" | grep -o 'rots_value="[^"]*"' | head -1 | sed 's/rots_value="//;s/"//')"
   COST="${USED_USD:-0}"
-  if command -v python3 &>/dev/null && [[ "$COST" != "0" && "$COST" != "0.00" ]]; then
-    ROTS="$(python3 -c "print(round(${VALUE_DELIVERED} / float('${COST}'), 2))")"
+  if [[ -n "$ROTS_FROM_OUTPUT" ]]; then
+    ROTS="$ROTS_FROM_OUTPUT"
+  elif command -v python3 &>/dev/null && [[ "$COST" != "0" && "$COST" != "0.00" ]]; then
+    # Fallback: ROTS = 1 unit of value / cost. Override rots_value in promise tag for meaningful numbers.
+    ROTS="$(python3 -c "print(round(1.0 / float('${COST}'), 4))" 2>/dev/null || echo "pending")"
   else
-    ROTS="inf"
+    ROTS="pending"
   fi
   echo "[jade-loop] Task complete. ROTS=${ROTS}. Iterations=${ITERATION}." >&2
-  # Persist ROTS to state file
-  sed -i "s/^rots:.*/rots: ${ROTS}/" "$STATE_FILE" 2>/dev/null || true
+  # Persist ROTS to state file (portable sed — temp file approach for macOS compat)
+  TMP_STATE="$(mktemp)"
+  sed "s/^rots:.*/rots: ${ROTS}/" "$STATE_FILE" > "$TMP_STATE" && mv "$TMP_STATE" "$STATE_FILE" || rm -f "$TMP_STATE"
   exit 0
 fi
 
@@ -125,7 +130,9 @@ fi
 # ── continue loop ─────────────────────────────────────────────────────────────
 
 NEW_ITERATION=$(( ITERATION + 1 ))
-sed -i "s/^iteration:.*/iteration: ${NEW_ITERATION}/" "$STATE_FILE" 2>/dev/null || true
+# Portable in-place edit via temp file (works on both Linux and macOS)
+TMP_STATE="$(mktemp)"
+sed "s/^iteration:.*/iteration: ${NEW_ITERATION}/" "$STATE_FILE" > "$TMP_STATE" && mv "$TMP_STATE" "$STATE_FILE" || rm -f "$TMP_STATE"
 
 # Output the original prompt (body after second ---) to re-drive the agent.
 PROMPT="$(awk '/^---$/{n++; if(n==2){found=1; next}} found{print}' "$STATE_FILE")"
