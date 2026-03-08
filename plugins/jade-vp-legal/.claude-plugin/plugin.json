@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-legal",
+  "description": "CLO seat — contract review, NDA drafting, compliance checks, and IP management.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}

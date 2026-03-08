@@ -1,0 +1,6 @@
+{
+  "name": "jade-cofounder",
+  "description": "CEO seat of the Jade S-Team council. Drives OP1/OP2 planning, WBR/MBR/QBR cadences, and S-Team orchestration.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}

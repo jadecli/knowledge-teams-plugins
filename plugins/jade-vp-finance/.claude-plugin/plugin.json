@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-finance",
+  "description": "CFO seat — journal entries, reconciliation, financial statements, burn tracking, and unit economics.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}

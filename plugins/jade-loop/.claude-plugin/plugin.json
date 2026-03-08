@@ -1,0 +1,6 @@
+{
+  "name": "jade-loop",
+  "description": "Enterprise Ralph Loop with budget tracking, ROTS measurement, escalation policy, and bloom eval gates.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}

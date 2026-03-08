@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-support",
+  "description": "CCO seat — ticket triage, escalation management, CSAT tracking, and knowledge base authoring.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}

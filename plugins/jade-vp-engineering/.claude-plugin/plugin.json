@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-engineering",
+  "description": "CTO seat — code review, SDK codegen, architecture review, DORA metrics, and engineering excellence.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}
