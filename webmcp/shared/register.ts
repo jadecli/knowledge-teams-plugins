@@ -1,9 +1,10 @@
-import { z, ZodType } from "zod";
+import { z } from "zod";
 
 export interface WebMCPToolDefinition<T = unknown> {
   name: string;
   description: string;
-  inputSchema: ZodType<T>;
+  // Allow schemas where input may differ from output (e.g. z.default())
+  inputSchema: z.ZodType<T, z.ZodTypeDef, unknown>;
   handler: (input: T) => Promise<unknown>;
 }
 
