@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-security",
+  "description": "CSO seat — security review, prompt injection detection, bloom eval gates, and compliance.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}

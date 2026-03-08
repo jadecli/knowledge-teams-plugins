@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-search",
+  "description": "Chief Search Officer — cross-tool search, knowledge graph aggregation, and workspace discoverability.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}

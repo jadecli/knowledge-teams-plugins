@@ -78,8 +78,8 @@ export function scanPluginDir(dir: string, source: "upstream" | "jade"): LoadedP
 function collectMarkdownFiles(dir: string): string[] {
   if (!existsSync(dir)) return [];
   return readdirSync(dir)
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => join(dir, f));
+    .filter((f: string) => f.endsWith(".md"))
+    .map((f: string) => join(dir, f));
 }
 
 /**

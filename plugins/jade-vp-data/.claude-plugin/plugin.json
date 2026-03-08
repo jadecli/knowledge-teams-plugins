@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-data",
+  "description": "CDO seat — SQL generation, statistical analysis, dashboards, and WBR/MBR/QBR data preparation.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}
