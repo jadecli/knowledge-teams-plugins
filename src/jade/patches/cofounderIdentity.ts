@@ -46,14 +46,27 @@ export async function applyCofounderIdentityPatch(): Promise<void> {
 
   const content = await readContent(installation);
 
-  // Skip if already patched
-  if (content.includes(JADE_IDENTITY_MARKER)) {
+  // Skip if already fully patched (check for both marker blocks)
+  if (
+    content.includes(JADE_IDENTITY_MARKER) &&
+    content.includes("<!-- jade-s-team-context -->")
+  ) {
     return;
+  }
+
+  // If partially patched (one block present but not the other), strip existing
+  // jade blocks first to ensure a clean re-application.
+  let base = content;
+  if (base.includes(JADE_IDENTITY_MARKER) || base.includes("<!-- jade-s-team-context -->")) {
+    base = base
+      .replace(/\n\n<!-- jade-cofounder-identity -->[\s\S]*?<!-- \/jade-cofounder-identity -->/g, "")
+      .replace(/\n\n<!-- jade-s-team-context -->[\s\S]*?<!-- \/jade-s-team-context -->/g, "")
+      .replace(/You are Claude Code — operating as the Jade Cofounder/g, "You are Claude Code");
   }
 
   // Inject jade identity after the first occurrence of "You are Claude Code"
   let patched = helpers.globalReplace(
-    content,
+    base,
     "You are Claude Code",
     `You are Claude Code — operating as the Jade Cofounder`
   );

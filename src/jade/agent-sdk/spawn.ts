@@ -44,12 +44,15 @@ export async function spawnAgent(config: SpawnConfig): Promise<SpawnResult> {
 
   if (auth.mode === "pro-max") {
     // Pro Max uses the Claude Code session; we cannot call the API directly.
-    // Return a placeholder result — the jade-loop stop hook handles the actual loop.
+    // Cost tracking is not available in pro-max mode — jade-loop budget enforcement
+    // relies on the stop hook reading from `.claude/jade-loop.local.md` instead.
+    // spawnAgent in pro-max mode is a no-op placeholder; use the jade-loop stop hook
+    // for actual task execution and budget tracking.
     const inputTokens = estimateTokens(config.prompt);
     return {
       raw: {
         success: true,
-        output: `[pro-max] Delegated to Claude Code session for agent: ${config.agent.name}`,
+        output: `[pro-max] Delegated to Claude Code session for agent: ${config.agent.name}. Cost tracking unavailable in pro-max mode; use jade-loop stop hook for budget enforcement.`,
         inputTokens,
         outputTokens: 0,
         estimatedCostUsd: 0,
