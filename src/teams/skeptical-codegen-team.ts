@@ -154,8 +154,9 @@ export async function runSkepticalCodegenTeam(cwd = process.cwd()): Promise<void
       model: "claude-opus-4-6",
       cwd,
       agents,
+      tools: ["Read", "Glob", "Grep", "Agent"],
       allowedTools: ["Read", "Glob", "Grep", "Agent"],
-      permissionMode: "default",
+      permissionMode: "dontAsk",
       settingSources: ["project"],
       systemPrompt: {
         type: "preset",
