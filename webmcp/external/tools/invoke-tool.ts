@@ -3,7 +3,7 @@ import { registerTool } from "../../shared/register.js";
 
 const inputSchema = z.object({
   toolName: z.string().describe("The tool to invoke"),
-  input: z.record(z.unknown()).describe("Tool input parameters"),
+  input: z.record(z.string(), z.unknown()).describe("Tool input parameters"),
   callerAgent: z.string().optional().describe("Identifier of the calling agent"),
 });
 
