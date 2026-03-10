@@ -1,0 +1,39 @@
+name: Staff Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Review this PR for code quality, security, and architectural consistency.
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            Focus on:
+            - Security: no secrets, no injection, OWASP top 10
+            - SDK correctness: must use @anthropic-ai/claude-agent-sdk (query/agents), never @anthropic-ai/sdk (REST client)
+            - Type safety: no `any`, no unsafe type assertions, no @ts-ignore
+            - WebMCP tools: every tool must export { name, description, inputSchema, handler }
+            - Dead code: handlers returning empty stubs, registries with no consumers
+            - Zod v4 API: use err.issues not err.errors, z.record(key, val) not z.record(val)
+
+            Read CLAUDE.md for project conventions.
+          track_progress: true
+          display_report: true
+          claude_args: |
+            --max-turns 5

@@ -1,0 +1,38 @@
+name: Weekly Audit
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Run a weekly audit of jadecli/knowledge-teams-plugins. Create a GitHub issue with findings.
+
+            Check for:
+            1. Stale TODOs or FIXMEs in src/, webmcp/, compose/, extensions/
+            2. WebMCP tool handlers that return empty/stub data (tasks: [], tools: [])
+            3. Any hardcoded secrets or API keys
+            4. SDK misuse: imports of @anthropic-ai/sdk instead of @anthropic-ai/claude-agent-sdk
+            5. S-team STO files in s-team/ with no corresponding TypeScript runtime consumer
+            6. Dependency drift: check package.json for outdated major versions
+
+            Title the issue: "weekly-audit: YYYY-MM-DD findings"
+            Label it: maintenance
+            Only create the issue if findings exist. Skip if everything is clean.
+          claude_args: |
+            --max-turns 5
+            --allowedTools Read,Glob,Grep,Bash
