@@ -18,6 +18,8 @@ jobs:
         with:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           prompt: |
             Run a weekly audit of jadecli/knowledge-teams-plugins. Create a GitHub issue with findings.
