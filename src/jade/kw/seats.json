@@ -1,17 +1,17 @@
 {
   "seats": [
-    { "kwId": "KW-01", "plugin": "jade-cofounder", "title": "CEO", "sto": null },
+    { "kwId": "KW-01", "plugin": "jade-cofounder", "title": "CEO", "sto": "ceo" },
     { "kwId": "KW-02", "plugin": "jade-vp-engineering", "title": "CTO", "sto": "cto" },
     { "kwId": "KW-03", "plugin": "jade-vp-security", "title": "CSO", "sto": "cso" },
     { "kwId": "KW-04", "plugin": "jade-vp-product", "title": "CPO", "sto": "cpo" },
     { "kwId": "KW-05", "plugin": "jade-vp-sales", "title": "CRO", "sto": "cro" },
-    { "kwId": "KW-06", "plugin": "jade-vp-marketing", "title": "CMO", "sto": null },
+    { "kwId": "KW-06", "plugin": "jade-vp-marketing", "title": "CMO", "sto": "cmo" },
     { "kwId": "KW-07", "plugin": "jade-vp-finance", "title": "CFO", "sto": "cfo" },
     { "kwId": "KW-08", "plugin": "jade-vp-data", "title": "CDO", "sto": "cdo" },
     { "kwId": "KW-09", "plugin": "jade-vp-support", "title": "CCO", "sto": "cco" },
     { "kwId": "KW-10", "plugin": "jade-vp-legal", "title": "CLO", "sto": "gc" },
-    { "kwId": "KW-11", "plugin": "jade-vp-search", "title": "CSO2", "sto": null },
-    { "kwId": "KW-12", "plugin": "jade-vp-research", "title": "CRO2", "sto": null },
+    { "kwId": "KW-11", "plugin": "jade-vp-search", "title": "CSO2", "sto": "cso2" },
+    { "kwId": "KW-12", "plugin": "jade-vp-research", "title": "CRO2", "sto": "cro2" },
     { "kwId": "KW-13", "plugin": "jade-vp-productivity", "title": "CPO2", "sto": "coo" }
   ],
   "repoMap": {

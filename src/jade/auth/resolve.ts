@@ -4,6 +4,9 @@
  * direct API key, or Enterprise route.
  */
 
+import { readFileSync } from "fs";
+import { resolve } from "path";
+
 export type AuthMode = "pro-max" | "api-key" | "enterprise";
 
 export interface AuthConfig {
@@ -13,11 +16,35 @@ export interface AuthConfig {
   model: string;
 }
 
-const DEFAULT_MODELS: Record<AuthMode, string> = {
-  "pro-max": "claude-sonnet-4-5",
-  "api-key": "claude-opus-4-5",
-  enterprise: "claude-opus-4-5",
-};
+interface ModelsConfig {
+  models: Record<string, string>;
+  defaults: Record<string, string>;
+  pricing: Record<string, { inputPer1M: number; outputPer1M: number }>;
+}
+
+const MODELS_JSON_PATH = resolve(import.meta.dirname ?? __dirname, "..", "models.json");
+
+function loadModelsConfig(): ModelsConfig {
+  const raw = readFileSync(MODELS_JSON_PATH, "utf-8");
+  return JSON.parse(raw) as ModelsConfig;
+}
+
+const DEFAULT_MODELS: Record<AuthMode, string> = (() => {
+  try {
+    const config = loadModelsConfig();
+    return {
+      "pro-max": config.defaults["pro-max"] ?? "claude-sonnet-4-6",
+      "api-key": config.defaults["api-key"] ?? "claude-opus-4-6",
+      enterprise: config.defaults["enterprise"] ?? "claude-opus-4-6",
+    };
+  } catch {
+    return {
+      "pro-max": "claude-sonnet-4-6",
+      "api-key": "claude-opus-4-6",
+      enterprise: "claude-opus-4-6",
+    };
+  }
+})();
 
 /**
  * Resolve authentication configuration from environment variables.
