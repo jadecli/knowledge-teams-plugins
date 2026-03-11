@@ -13,18 +13,14 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-latest
-    env:
-      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
         with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           fetch-depth: 0
-      - name: Debug auth env
-        run: |
-          echo "ANTHROPIC_API_KEY set: $([[ -n "$ANTHROPIC_API_KEY" ]] && echo YES || echo NO)"
-          echo "CLAUDE_CODE_OAUTH_TOKEN set: $([[ -n "$CLAUDE_CODE_OAUTH_TOKEN" ]] && echo YES || echo NO)"
       - uses: anthropics/claude-code-action@v1
         with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
             Run a weekly audit of jadecli/knowledge-teams-plugins. Create a GitHub issue with findings.
 
