@@ -3,16 +3,16 @@
 > Generated: 2026-03-11T00:00:00Z
 > Source: `claude/research-claude-sdk-agents-oVAul`
 > Schema version: 1
-> Entities: 47 | Relationships: 43
+> Entities: 51 | Relationships: 50
 
 ## Layers
 
 | Layer | Entities | Inbound Rels | Outbound Rels |
 |-------|----------|--------------|---------------|
-| data | 6 | 9 | 0 |
+| data | 6 | 9 | 1 |
 | type | 15 | 0 | 3 |
 | runtime | 12 | 3 | 11 |
-| agent-sdk | 3 | 2 | 0 |
+| agent-sdk | 7 | 3 | 0 |
 | infra | 7 | 0 | 10 |
 | external | 4 | 10 | 0 |
 
@@ -273,8 +273,36 @@
 
 - **ID**: `agent_sdk.message_types`
 - **Source**: `@anthropic-ai/claude-agent-sdk`
-- **Description**: Streaming message types emitted by query() async iterator
-- **Attributes**: 3 | **Functions**: 0
+- **Description**: Streaming message types emitted by query() async iterator (SDKMessage union)
+- **Attributes**: 7 | **Functions**: 0
+
+### Session
+
+- **ID**: `agent_sdk.Session`
+- **Source**: `@anthropic-ai/claude-agent-sdk`
+- **Description**: Persisted conversation state as .jsonl at ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
+- **Attributes**: 8 | **Functions**: 2
+
+### Session Options
+
+- **ID**: `agent_sdk.SessionOptions`
+- **Source**: `@anthropic-ai/claude-agent-sdk`
+- **Description**: Session persistence and resume configuration passed via Options
+- **Attributes**: 5 | **Functions**: 0
+
+### Hook System
+
+- **ID**: `agent_sdk.HookSystem`
+- **Source**: `@anthropic-ai/claude-agent-sdk`
+- **Description**: 17 lifecycle hook events with matcher-based callback registration and sync/async responses
+- **Attributes**: 11 | **Functions**: 0
+
+### Permission System
+
+- **ID**: `agent_sdk.PermissionSystem`
+- **Source**: `@anthropic-ai/claude-agent-sdk`
+- **Description**: Permission modes and custom canUseTool callback for tool access control
+- **Attributes**: 4 | **Functions**: 0
 
 ## Infra Layer
 
@@ -404,3 +432,10 @@
 | `infra.architecture_guardrails` | `runtime.mcp_registry` | consumes | 1:1 | Guardrails reads mcp-registry.ts for canonical types and versions |
 | `infra.staff_review` | `runtime.mcp_registry` | consumes | 1:1 | Staff review checks package drift against ANTHROPIC_PACKAGES/MCP_PACKAGES |
 | `runtime.webmcp_registry` | `db.dim_tools` | references | 1:N | WebMCP tools classified in dim_tools with is_webmcp=true |
+| `agent_sdk.query` | `agent_sdk.Session` | produces | 1:1 | query() creates or resumes a Session (persisted .jsonl) |
+| `agent_sdk.SessionOptions` | `agent_sdk.Session` | references | N:1 | SessionOptions.resume/continue/forkSession target a Session |
+| `agent_sdk.Session` | `agent_sdk.message_types` | composes | 1:N | Session .jsonl persists ordered SDKMessage history |
+| `agent_sdk.query` | `agent_sdk.HookSystem` | uses | 1:1 | query() options.hooks registers HookCallbackMatcher[] per event |
+| `agent_sdk.query` | `agent_sdk.PermissionSystem` | uses | 1:1 | query() options.permissionMode + canUseTool configure access control |
+| `agent_sdk.HookSystem` | `agent_sdk.Session` | references | N:1 | Hook inputs include session_id, transcript_path from BaseHookInput |
+| `db.dim_sessions` | `agent_sdk.Session` | references | N:1 | dim_sessions.session_id maps to Agent SDK Session UUID |

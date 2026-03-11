@@ -280,8 +280,52 @@ erDiagram
 
   agent_sdk_message_types {
     object assistant
+    object user
     object result.success
     object result.error
+    object system.init
+    object stream_event
+    object compact_boundary
+  }
+
+  agent_sdk_Session {
+    string sessionId
+    string summary
+    timestamp lastModified
+    int fileSize
+    string customTitle
+    string firstPrompt
+    string gitBranch
+    string cwd
+  }
+
+  agent_sdk_SessionOptions {
+    string resume
+    bool continue
+    bool forkSession
+    bool persistSession
+    string sessionId
+  }
+
+  agent_sdk_HookSystem {
+    string PreToolUse
+    string PostToolUse
+    string PostToolUseFailure
+    string Notification
+    string UserPromptSubmit
+    string SessionStart
+    string SessionEnd
+    string Stop
+    string SubagentStart
+    string SubagentStop
+    string PermissionRequest
+  }
+
+  agent_sdk_PermissionSystem {
+    enum permissionMode
+    fn canUseTool
+    object PermissionResult.allow
+    object PermissionResult.deny
   }
 
   %% ── INFRA LAYER ──
@@ -380,11 +424,18 @@ erDiagram
   infra_architecture_guardrails ||--|| runtime_mcp_registry : "Guardrails reads mcp-registry.ts for canonical types and versions"
   infra_staff_review ||--|| runtime_mcp_registry : "Staff review checks package drift against ANTHROPIC_PACKAGES/MCP_PACKAGES"
   runtime_webmcp_registry ||--o{ db_dim_tools : "WebMCP tools classified in dim_tools with is_webmcp=true"
+  agent_sdk_query ||--|| agent_sdk_Session : "query() creates or resumes a Session (persisted .jsonl)"
+  agent_sdk_SessionOptions }o--|| agent_sdk_Session : "SessionOptions.resume/continue/forkSession target a Session"
+  agent_sdk_Session ||--o{ agent_sdk_message_types : "Session .jsonl persists ordered SDKMessage history"
+  agent_sdk_query ||--|| agent_sdk_HookSystem : "query() options.hooks registers HookCallbackMatcher[] per event"
+  agent_sdk_query ||--|| agent_sdk_PermissionSystem : "query() options.permissionMode + canUseTool configure access control"
+  agent_sdk_HookSystem }o--|| agent_sdk_Session : "Hook inputs include session_id, transcript_path from BaseHookInput"
+  db_dim_sessions }o--|| agent_sdk_Session : "dim_sessions.session_id maps to Agent SDK Session UUID"
 ```
 
 ## Data Layer
 
-> 6 entities, 12 relationships
+> 6 entities, 13 relationships
 
 ### dim_tools
 
@@ -569,6 +620,7 @@ erDiagram
   type_CachedDoc ||--|| db_meta_doc_cache : "CachedDoc maps to one meta_doc_cache row"
   type_OrgUsageBucket ||--|| db_fact_org_usage : "Each OrgUsageBucket maps to one fact_org_usage row"
   runtime_webmcp_registry ||--o{ db_dim_tools : "WebMCP tools classified in dim_tools with is_webmcp=true"
+  db_dim_sessions }o--|| agent_sdk_Session : "dim_sessions.session_id maps to Agent SDK Session UUID"
 ```
 
 ## Type Layer
@@ -1221,7 +1273,7 @@ erDiagram
 
 ## Agent-sdk Layer
 
-> 3 entities, 4 relationships
+> 7 entities, 11 relationships
 
 ### query()
 
@@ -1259,13 +1311,86 @@ Sub-agent definition spawnable by lead agent via the Agent tool
 
 `agent_sdk.message_types` — `@anthropic-ai/claude-agent-sdk`
 
-Streaming message types emitted by query() async iterator
+Streaming message types emitted by query() async iterator (SDKMessage union)
 
 | Attribute | Type | Required | Notes |
 |-----------|------|----------|-------|
-| assistant | object | yes | msg.message.content[].text — assistant text blocks |
-| result.success | object | yes | num_turns, total_cost_usd — successful completion |
-| result.error | object | yes | subtype, errors — failure |
+| assistant | object | yes | SDKAssistantMessage — wraps BetaMessage with uuid, session_id, parent_tool_use_id |
+| user | object | yes | SDKUserMessage — wraps MessageParam with optional tool_use_result |
+| result.success | object | yes | num_turns, total_cost_usd, usage, modelUsage, duration_ms, structured_output? |
+| result.error | object | yes | subtype: error_max_turns|error_during_execution|error_max_budget_usd, errors[] |
+| system.init | object | yes | SDKSystemMessage — tools, agents, mcp_servers, model, permissionMode, claude_code_version |
+| stream_event | object | yes | SDKPartialAssistantMessage — real-time streaming content blocks |
+| compact_boundary | object | no | SDKCompactBoundaryMessage — context compression trigger with pre_tokens count |
+
+### Session
+
+`agent_sdk.Session` — `@anthropic-ai/claude-agent-sdk`
+
+Persisted conversation state as .jsonl at ~/.claude/projects/<encoded-cwd>/<session-id>.jsonl
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| sessionId | string | yes | UUID identifying this session |
+| summary | string | no |  |
+| lastModified | timestamp | yes |  |
+| fileSize | integer | no |  |
+| customTitle | string | no |  |
+| firstPrompt | string | no |  |
+| gitBranch | string | no |  |
+| cwd | string | no |  |
+
+**Functions:**
+
+- `listSessions(cwd?)`: `Promise<SDKSessionInfo[]>` — List all persisted sessions (optionally filtered by cwd)
+- `getSessionMessages(sessionId)`: `Promise<SessionMessage[]>` — Read full conversation history from .jsonl file
+
+### Session Options
+
+`agent_sdk.SessionOptions` — `@anthropic-ai/claude-agent-sdk`
+
+Session persistence and resume configuration passed via Options
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| resume | string | no | Session ID to resume |
+| continue | boolean | no | Auto-find most recent session in cwd |
+| forkSession | boolean | no | Create new session from copy of resumed session history |
+| persistSession | boolean | no | false = memory-only (TS only), default true |
+| sessionId | string | no | Explicit session ID to use |
+
+### Hook System
+
+`agent_sdk.HookSystem` — `@anthropic-ai/claude-agent-sdk`
+
+17 lifecycle hook events with matcher-based callback registration and sync/async responses
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| PreToolUse | string | no | Before tool execution — can modify input or deny |
+| PostToolUse | string | no | After tool execution — can modify output |
+| PostToolUseFailure | string | no | After tool failure — error, is_interrupt? |
+| Notification | string | no | Agent notifications — message, title?, notification_type |
+| UserPromptSubmit | string | no | Before prompt processing — can modify prompt |
+| SessionStart | string | no | TS only — source: startup|resume|clear|compact |
+| SessionEnd | string | no | TS only — reason: ExitReason |
+| Stop | string | no | Agent stop event — last_assistant_message? |
+| SubagentStart | string | no | Sub-agent spawned — agent_id, agent_type |
+| SubagentStop | string | no | Sub-agent completed — agent_transcript_path |
+| PermissionRequest | string | no | Permission prompt — tool_name, tool_input, suggestions? |
+
+### Permission System
+
+`agent_sdk.PermissionSystem` — `@anthropic-ai/claude-agent-sdk`
+
+Permission modes and custom canUseTool callback for tool access control
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| permissionMode | enum | yes | enum: default, acceptEdits, bypassPermissions, plan, dontAsk; Global permission policy |
+| canUseTool | function | no | Custom callback: (toolName, input, opts) => Promise<PermissionResult> |
+| PermissionResult.allow | object | no | {behavior: 'allow', updatedInput?, updatedPermissions?} |
+| PermissionResult.deny | object | no | {behavior: 'deny', message, interrupt?} |
 
 #### Diagram
 
@@ -1295,8 +1420,52 @@ erDiagram
 
   agent_sdk_message_types {
     object assistant
+    object user
     object result.success
     object result.error
+    object system.init
+    object stream_event
+    object compact_boundary
+  }
+
+  agent_sdk_Session {
+    string sessionId
+    string summary
+    timestamp lastModified
+    int fileSize
+    string customTitle
+    string firstPrompt
+    string gitBranch
+    string cwd
+  }
+
+  agent_sdk_SessionOptions {
+    string resume
+    bool continue
+    bool forkSession
+    bool persistSession
+    string sessionId
+  }
+
+  agent_sdk_HookSystem {
+    string PreToolUse
+    string PostToolUse
+    string PostToolUseFailure
+    string Notification
+    string UserPromptSubmit
+    string SessionStart
+    string SessionEnd
+    string Stop
+    string SubagentStart
+    string SubagentStop
+    string PermissionRequest
+  }
+
+  agent_sdk_PermissionSystem {
+    enum permissionMode
+    fn canUseTool
+    object PermissionResult.allow
+    object PermissionResult.deny
   }
 
   %% ── RELATIONSHIPS ──
@@ -1304,6 +1473,13 @@ erDiagram
   runtime_skeptical_team ||--o{ agent_sdk_AgentDefinition : "Defines 3 sub-agents: type-auditor, dead-code-hunter, simplicity-enforcer"
   agent_sdk_query ||--o{ agent_sdk_AgentDefinition : "query() options.agents receives AgentDefinition records"
   agent_sdk_query ||--o{ agent_sdk_message_types : "query() async iterator yields message types"
+  agent_sdk_query ||--|| agent_sdk_Session : "query() creates or resumes a Session (persisted .jsonl)"
+  agent_sdk_SessionOptions }o--|| agent_sdk_Session : "SessionOptions.resume/continue/forkSession target a Session"
+  agent_sdk_Session ||--o{ agent_sdk_message_types : "Session .jsonl persists ordered SDKMessage history"
+  agent_sdk_query ||--|| agent_sdk_HookSystem : "query() options.hooks registers HookCallbackMatcher[] per event"
+  agent_sdk_query ||--|| agent_sdk_PermissionSystem : "query() options.permissionMode + canUseTool configure access control"
+  agent_sdk_HookSystem }o--|| agent_sdk_Session : "Hook inputs include session_id, transcript_path from BaseHookInput"
+  db_dim_sessions }o--|| agent_sdk_Session : "dim_sessions.session_id maps to Agent SDK Session UUID"
 ```
 
 ## Infra Layer

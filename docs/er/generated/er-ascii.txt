@@ -530,8 +530,77 @@
 │ ATTRIBUTES                                                   │
 ├──────────────────────────────────────────────────────────────┤
 │  assistant: object                                           │
+│  user: object                                                │
 │  result.success: object                                      │
 │  result.error: object                                        │
+│  system.init: object                                         │
+│  stream_event: object                                        │
+│  compact_boundary: object (nullable)                         │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Session [agent-sdk]                                          │
+│ @anthropic-ai/claude-agent-sdk                               │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  sessionId: string                                           │
+│  summary: string (nullable)                                  │
+│  lastModified: timestamp                                     │
+│  fileSize: integer (nullable)                                │
+│  customTitle: string (nullable)                              │
+│  firstPrompt: string (nullable)                              │
+│  gitBranch: string (nullable)                                │
+│  cwd: string (nullable)                                      │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  listSessions(cwd?): Promise<SDKSessionInfo[]>               │
+│  getSessionMessages(sessionId): Promise<SessionMessage[]>    │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Session Options [agent-sdk]                                  │
+│ @anthropic-ai/claude-agent-sdk                               │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  resume: string (nullable)                                   │
+│  continue: boolean (nullable)                                │
+│  forkSession: boolean (nullable)                             │
+│  persistSession: boolean (nullable)                          │
+│  sessionId: string (nullable)                                │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Hook System [agent-sdk]                                      │
+│ @anthropic-ai/claude-agent-sdk                               │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  PreToolUse: string (nullable)                               │
+│  PostToolUse: string (nullable)                              │
+│  PostToolUseFailure: string (nullable)                       │
+│  Notification: string (nullable)                             │
+│  UserPromptSubmit: string (nullable)                         │
+│  SessionStart: string (nullable)                             │
+│  SessionEnd: string (nullable)                               │
+│  Stop: string (nullable)                                     │
+│  SubagentStart: string (nullable)                            │
+│  SubagentStop: string (nullable)                             │
+│  PermissionRequest: string (nullable)                        │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Permission System [agent-sdk]                                │
+│ @anthropic-ai/claude-agent-sdk                               │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  permissionMode: enum                                        │
+│  canUseTool: function (nullable)                             │
+│  PermissionResult.allow: object (nullable)                   │
+│  PermissionResult.deny: object (nullable)                    │
 └──────────────────────────────────────────────────────────────┘
 
 ═══ INFRA LAYER ═════════════════════════════════════════════
@@ -773,3 +842,24 @@
 
   runtime.webmcp_registry ──[REFERENCES 1:N]──▶ db.dim_tools
     WebMCP tools classified in dim_tools with is_webmcp=true
+
+  agent_sdk.query ──[PRODUCES 1:1]──▶ agent_sdk.Session
+    query() creates or resumes a Session (persisted .jsonl)
+
+  agent_sdk.SessionOptions ──[REFERENCES N:1]──▶ agent_sdk.Session
+    SessionOptions.resume/continue/forkSession target a Session
+
+  agent_sdk.Session ──[COMPOSES 1:N]──▶ agent_sdk.message_types
+    Session .jsonl persists ordered SDKMessage history
+
+  agent_sdk.query ──[USES 1:1]──▶ agent_sdk.HookSystem
+    query() options.hooks registers HookCallbackMatcher[] per event
+
+  agent_sdk.query ──[USES 1:1]──▶ agent_sdk.PermissionSystem
+    query() options.permissionMode + canUseTool configure access control
+
+  agent_sdk.HookSystem ──[REFERENCES N:1]──▶ agent_sdk.Session
+    Hook inputs include session_id, transcript_path from BaseHookInput
+
+  db.dim_sessions ──[REFERENCES N:1]──▶ agent_sdk.Session
+    dim_sessions.session_id maps to Agent SDK Session UUID
