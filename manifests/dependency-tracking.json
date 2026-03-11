@@ -3,10 +3,11 @@
   "description": "Tracks all dependencies with health status, Claude/Anthropic security package flags, and CVE cross-references. Updated by manifests-update GitHub Action on every push to main.",
   "generatedAt": "2026-03-11T00:00:00Z",
   "llmsTxtSources": {
-    "claudeCode": "https://docs.anthropic.com/en/docs/claude-code/llms.txt",
-    "claudeCodeFull": "https://docs.anthropic.com/en/docs/claude-code/llms-full.txt",
-    "claudePlatform": "https://docs.anthropic.com/en/docs/llms.txt",
-    "claudePlatformFull": "https://docs.anthropic.com/llms-full.txt"
+    "claudeCode": "https://code.claude.com/docs/llms.txt",
+    "claudeCodeFull": "https://code.claude.com/docs/llms-full.txt",
+    "claudePlatform": "https://platform.claude.com/docs/llms.txt",
+    "claudePlatformFull": "https://platform.claude.com/docs/llms-full.txt",
+    "_note": "docs.anthropic.com paths redirect to these canonical URLs as of 2026-03"
   },
   "ragAccessible": {
     "description": "Full llms.txt files are RAG-accessible for agent context injection. Agents should fetch llms-full.txt for comprehensive API reference before making changes to SDK integration code.",
