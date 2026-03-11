@@ -16,7 +16,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
         env:
@@ -39,5 +38,4 @@ jobs:
             Read CLAUDE.md for project conventions.
           track_progress: true
           display_report: true
-          claude_args: |
-            --max-turns 5
+          max_turns: "5"

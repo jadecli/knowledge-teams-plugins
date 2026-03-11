@@ -32,6 +32,5 @@ jobs:
             6. Post a brief triage comment with category, complexity, and relevant files
 
             Do NOT attempt to fix the issue. Triage only.
-          claude_args: |
-            --max-turns 3
-            --allowedTools Read,Glob,Grep
+          max_turns: "3"
+          allowed_tools: "Read,Glob,Grep"
