@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join, extname, resolve } from "node:path";
 
 const ROOT = resolve(import.meta.dirname, "../..");
@@ -34,7 +34,6 @@ function collectFiles(dir: string): string[] {
   return files;
 }
 
-// Secret patterns — same as architecture-guardrails.yml E. Security section
 const SECRET_PATTERNS = [
   { name: "Anthropic API key", pattern: /sk-ant-[a-zA-Z0-9]{20,}/ },
   { name: "Slack bot token", pattern: /xoxb-[a-zA-Z0-9-]+/ },
@@ -42,6 +41,15 @@ const SECRET_PATTERNS = [
   { name: "AWS access key", pattern: /AKIA[A-Z0-9]{16}/ },
   { name: "Bearer token (long)", pattern: /Bearer [a-zA-Z0-9_-]{40,}/ },
 ];
+
+// Cache file contents once for all pattern checks (avoids N_files × N_patterns reads)
+const files = collectFiles(ROOT);
+const fileContents = new Map<string, string>();
+for (const file of files) {
+  if (file.endsWith("secrets-detection.security.test.ts")) continue;
+  if (file.endsWith(".env.example")) continue;
+  fileContents.set(file, readFileSync(file, "utf-8"));
+}
 
 /**
  * @security-test
@@ -55,26 +63,16 @@ const SECRET_PATTERNS = [
  * ---
  */
 describe("secrets-detection — no hardcoded secrets in source", () => {
-  const files = collectFiles(ROOT);
-
   for (const { name, pattern } of SECRET_PATTERNS) {
     it(`no ${name} pattern in source files`, () => {
       const violations: string[] = [];
-
-      for (const file of files) {
-        // Skip this test file itself (contains patterns as regex literals)
-        if (file.endsWith("secrets-detection.security.test.ts")) continue;
-        // Skip .env.example — it has placeholder patterns like sk-ant-xxxxx
-        if (file.endsWith(".env.example")) continue;
-
-        const content = readFileSync(file, "utf-8");
+      for (const [file, content] of fileContents) {
         const match = content.match(pattern);
         if (match) {
           const relPath = file.replace(ROOT + "/", "");
           violations.push(`${relPath}: found ${name} → ${match[0].slice(0, 20)}...`);
         }
       }
-
       expect(violations, `Found ${name} in source files`).toEqual([]);
     });
   }
@@ -92,20 +90,18 @@ describe("secrets-detection — no hardcoded secrets in source", () => {
  * ---
  */
 describe("secrets-detection — .env.example has placeholders only", () => {
+  const envExample = readFileSync(join(ROOT, ".env.example"), "utf-8");
+
   it("DATABASE_URL uses placeholder host", () => {
-    const envExample = readFileSync(join(ROOT, ".env.example"), "utf-8");
     const dbUrl = envExample.match(/DATABASE_URL=(.+)/);
     if (dbUrl) {
-      // Should contain "neon.tech" placeholder, not a real connection string with password
       expect(dbUrl[1]).not.toMatch(/@[a-z0-9-]+\.neon\.tech.*password/i);
     }
   });
 
   it("ANTHROPIC_ORG_API_KEY uses placeholder pattern", () => {
-    const envExample = readFileSync(join(ROOT, ".env.example"), "utf-8");
     const apiKey = envExample.match(/ANTHROPIC_ORG_API_KEY=(.+)/);
     if (apiKey) {
-      // Placeholder should contain "xxxxx" or similar, not a real key
       expect(apiKey[1]).toMatch(/xxxxx/);
     }
   });
@@ -124,50 +120,29 @@ describe("secrets-detection — .env.example has placeholders only", () => {
  */
 describe("secrets-detection — workflow tokens use ${{ secrets.* }}", () => {
   const workflowDir = join(ROOT, ".github", "workflows");
+  const workflowFiles = readdirSync(workflowDir).filter((f) => f.endsWith(".yml"));
 
-  it("CLAUDE_CODE_OAUTH_TOKEN only in secrets context", () => {
-    const files = readdirSync(workflowDir).filter((f) => f.endsWith(".yml"));
-    for (const file of files) {
-      const content = readFileSync(join(workflowDir, file), "utf-8");
-      if (!content.includes("CLAUDE_CODE_OAUTH_TOKEN")) continue;
+  it.each(["CLAUDE_CODE_OAUTH_TOKEN", "CLAUDE_API_KEY"])(
+    "%s only in secrets context",
+    (tokenName) => {
+      for (const file of workflowFiles) {
+        const content = readFileSync(join(workflowDir, file), "utf-8");
+        if (!content.includes(tokenName)) continue;
 
-      // Every occurrence should be inside ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-      const lines = content.split("\n");
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (
-          line.includes("CLAUDE_CODE_OAUTH_TOKEN") &&
-          !line.includes("secrets.CLAUDE_CODE_OAUTH_TOKEN")
-        ) {
-          // Allow comments and documentation
-          if (line.trim().startsWith("#")) continue;
-          expect.fail(
-            `${file}:${i + 1} references CLAUDE_CODE_OAUTH_TOKEN outside secrets context`,
-          );
+        const lines = content.split("\n");
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (
+            line.includes(tokenName) &&
+            !line.includes(`secrets.${tokenName}`)
+          ) {
+            if (line.trim().startsWith("#")) continue;
+            expect.fail(
+              `${file}:${i + 1} references ${tokenName} outside secrets context`,
+            );
+          }
         }
       }
-    }
-  });
-
-  it("CLAUDE_API_KEY only in secrets context", () => {
-    const files = readdirSync(workflowDir).filter((f) => f.endsWith(".yml"));
-    for (const file of files) {
-      const content = readFileSync(join(workflowDir, file), "utf-8");
-      if (!content.includes("CLAUDE_API_KEY")) continue;
-
-      const lines = content.split("\n");
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-        if (
-          line.includes("CLAUDE_API_KEY") &&
-          !line.includes("secrets.CLAUDE_API_KEY")
-        ) {
-          if (line.trim().startsWith("#")) continue;
-          expect.fail(
-            `${file}:${i + 1} references CLAUDE_API_KEY outside secrets context`,
-          );
-        }
-      }
-    }
-  });
+    },
+  );
 });

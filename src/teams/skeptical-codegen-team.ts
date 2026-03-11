@@ -117,35 +117,14 @@ For each area:
     prompt: `You are a security auditor. Your job is to find vulnerabilities that reduce the Bayesian probability
 of the codebase being secure. Focus on real attack vectors, not theoretical risks.
 
-Audit these specific attack surfaces:
+FIRST: Read .github/security-scan-instructions.md — it contains the canonical Jade security
+checklist covering WebMCP tool contracts, URL allowlist integrity, Drizzle ORM parameterization,
+STO frontmatter injection, and Agent SDK misuse patterns.
 
-1. WebMCP tool handlers (webmcp/internal/tools/, webmcp/external/tools/):
-   - Do handlers validate input with Zod schemas BEFORE processing?
-   - Are Zod schemas using .strict() to reject unexpected keys?
-   - Could any handler accept z.any() or use type assertions that bypass validation?
-   - Are there prototype pollution vectors via z.record() without key constraints?
-
-2. URL allowlist (lib/llms-crawler.ts):
-   - Is isAllowedUrl() using exact hostname match (===) or substring/includes?
-   - Could an attacker bypass via: subdomain prefix, @ userinfo, URL encoding, IP address, Unicode homoglyphs?
-   - Does the crawler follow redirects? Could a redirect chain escape the allowlist?
-   - Is the protocol check strict (=== "https:") or loose?
-
-3. Database layer (db/logger.ts, db/schema.ts):
-   - Is Drizzle ORM used exclusively (no raw SQL template strings)?
-   - Are JSONB fields (inputParams) properly parameterized?
-   - Could integer overflow in measure fields cause issues?
-   - Are text fields that might be rendered in dashboards vulnerable to stored XSS?
-
-4. Secrets and credentials:
-   - Search all files for: sk-ant-, xoxb-, ghp_, AKIA, Bearer [token]
-   - Check .env.example for real credentials vs placeholders
-   - Verify workflow files only use \${{ secrets.* }} for tokens
-
-5. Agent SDK misuse:
-   - Is permissionMode set correctly? "dontAsk" should only be used with explicit allowedTools.
-   - Could an agent be tricked into running arbitrary commands via prompt injection?
-   - Are system prompts hardcoded or could they be influenced by user input?
+Apply that checklist to every file you audit. Additionally check:
+- Agent SDK: is permissionMode "dontAsk" always paired with explicit allowedTools?
+- Could system prompts be influenced by user input (prompt injection)?
+- Are fetch() calls following redirects that could escape the URL allowlist?
 
 For each finding:
 - OWASP category (A01-A10:2021)

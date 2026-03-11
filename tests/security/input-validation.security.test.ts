@@ -139,21 +139,14 @@ describe("input-validation — oversized input", () => {
  * ---
  */
 describe("input-validation — type coercion", () => {
-  it("rejects string where number expected", () => {
-    const schema = z.object({ count: z.number() });
-    const result = validateInput(schema, { count: "42" });
-    expect(result.success).toBe(false);
-  });
+  const coercionCases: [string, z.ZodType, Record<string, unknown>][] = [
+    ["number", z.object({ v: z.number() }), { v: "42" }],
+    ["boolean", z.object({ v: z.boolean() }), { v: "true" }],
+    ["integer", z.object({ v: z.number().int() }), { v: "1" }],
+  ];
 
-  it("rejects string where boolean expected", () => {
-    const schema = z.object({ active: z.boolean() });
-    const result = validateInput(schema, { active: "true" });
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects numeric string where integer expected", () => {
-    const schema = z.object({ id: z.number().int() });
-    const result = validateInput(schema, { id: "1" });
+  it.each(coercionCases)("rejects string where %s expected", (_label, schema, input) => {
+    const result = validateInput(schema, input);
     expect(result.success).toBe(false);
   });
 });

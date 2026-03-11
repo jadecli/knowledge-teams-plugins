@@ -207,9 +207,11 @@ describe("url-allowlist — extractUrls filtering", () => {
   it("does not extract URLs with user@host trick in markdown links", () => {
     const content = "[phishing](https://docs.anthropic.com@evil.com/payload)";
     const urls = extractUrls(content);
-    // The URL should be rejected because the hostname is evil.com, not docs.anthropic.com
+    // extractUrls checks isAllowedUrl — the @evil.com hostname causes rejection,
+    // so no URLs should be extracted from this malicious content
+    expect(urls.every((url) => isAllowedUrl(url))).toBe(true);
     for (const url of urls) {
-      expect(isAllowedUrl(url)).toBe(true);
+      expect(new URL(url).hostname).not.toContain("evil.com");
     }
   });
 });

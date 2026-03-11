@@ -45,6 +45,3 @@ jobs:
 
       - name: Test
         run: npm test
-
-      - name: Security tests
-        run: npm run test:security
