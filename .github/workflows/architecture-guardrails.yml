@@ -42,8 +42,8 @@ jobs:
           # Rotate daily: `claude auth status` → copy token → gh secret set
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
-          # direct_prompt exits non-zero on violations → blocks PR merge
-          direct_prompt: |
+          # prompt runs in automation mode → blocks PR merge on failure
+          prompt: |
             You are an architecture guardrail for jadecli/knowledge-teams-plugins.
             Your job is to BLOCK this PR if it violates any architectural rules.
 

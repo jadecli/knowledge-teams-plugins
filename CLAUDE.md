@@ -26,11 +26,13 @@ All workflows use `anthropics/claude-code-action@v1` with **OAuth tokens** (not 
 Both accounts (alex@jadecli.com, jade@jadecli.com) have $200/mo Max plans.
 Claude Code OAuth tokens are user-scoped and must be generated locally:
 
-```bash
-# 1. Log in (or refresh) — generates OAuth token
-claude auth login
+Prerequisites: Install the [Claude GitHub App](https://github.com/apps/claude) on your repos.
 
-# 2. Check token status
+```bash
+# 1. Generate OAuth token for CI/CD
+claude setup-token
+
+# 2. Verify token
 claude auth status
 
 # 3. Set for all repos (or per-repo)
@@ -38,6 +40,7 @@ gh secret set CLAUDE_CODE_OAUTH_TOKEN --body "<token>"
 ```
 
 Tokens expire daily — regenerate and update the secret each session.
+Alternatively, use `claude auth login` if `setup-token` is unavailable.
 
 ### Workflows
 
