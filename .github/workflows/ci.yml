@@ -23,5 +23,25 @@ jobs:
       - name: Type-check
         run: npm run build
 
+      # Create ephemeral Neon branch for PRs (copy of production data)
+      - name: Create Neon branch
+        if: github.event_name == 'pull_request'
+        id: neon-branch
+        uses: neondatabase/create-branch-action@v5
+        with:
+          api_key: ${{ secrets.NEON_API_KEY }}
+          project_id: ${{ secrets.NEON_PROJECT_ID }}
+          branch_name: pr-${{ github.event.pull_request.number }}
+          parent: main
+
+      - name: Set DATABASE_URL from Neon branch
+        if: github.event_name == 'pull_request'
+        run: echo "DATABASE_URL=${{ steps.neon-branch.outputs.db_url }}" >> $GITHUB_ENV
+
+      # Push schema to ephemeral branch — validates migrations before merge
+      - name: Run migrations on Neon branch
+        if: github.event_name == 'pull_request' && env.DATABASE_URL
+        run: npx drizzle-kit push
+
       - name: Test
         run: npm test
