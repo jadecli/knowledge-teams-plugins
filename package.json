@@ -10,10 +10,17 @@
     "review": "tsx scripts/run-skeptical-team.ts"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "latest",
+    "@anthropic-ai/claude-agent-sdk": "0.2.72",
+    "@anthropic-ai/sdk": "0.78.0",
+    "@anthropic-ai/bedrock-sdk": "0.26.4",
+    "@anthropic-ai/vertex-sdk": "0.14.4",
+    "@anthropic-ai/foundry-sdk": "0.2.3",
+    "@anthropic-ai/tokenizer": "0.0.4",
+    "@modelcontextprotocol/sdk": "1.27.1",
     "zod": "^4.0.0"
   },
   "devDependencies": {
+    "@modelcontextprotocol/inspector": "0.21.1",
     "@types/node": "^25.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",

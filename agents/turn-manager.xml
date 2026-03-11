@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Turn Manager — XML Agent File
+
+  Controls agentic turn budgets, checkpoints, and cost guardrails.
+  Referenced by: extensions/jade-orchestrator/skills/budget-enforcement.md
+
+  Semver type: agent-orchestration
+  Subtask type: turn-management
+-->
+<agent-config xmlns="urn:jadecli:agents:v1">
+  <metadata>
+    <name>turn-manager</name>
+    <version>0.1.0</version>
+    <semver-type>agent-orchestration</semver-type>
+    <description>Manages agentic turn budgets and cost checkpoints within a query() call</description>
+    <upstream-ref repo="jadecli/knowledge-work-plugins" commit="477c893b" />
+  </metadata>
+
+  <!-- Turn budget rules aligned with STO frontmatter budget_tool_calls -->
+  <turn-budget>
+    <default-max-turns>60</default-max-turns>
+    <checkpoint-interval>15</checkpoint-interval>
+    <warning-threshold-pct>80</warning-threshold-pct>
+    <hard-stop-threshold-pct>100</hard-stop-threshold-pct>
+
+    <!-- Cost guardrails (from Agent SDK maxBudgetUsd) -->
+    <cost-guardrails>
+      <max-budget-usd>5.00</max-budget-usd>
+      <warning-budget-usd>3.50</warning-budget-usd>
+      <per-step-cost-alert-usd>0.50</per-step-cost-alert-usd>
+    </cost-guardrails>
+  </turn-budget>
+
+  <!-- Checkpoint protocol: request-checkpoint WebMCP tool integration -->
+  <checkpoints>
+    <on-interval>
+      <action>request-checkpoint</action>
+      <include>
+        <field>budgetUsed</field>
+        <field>summary</field>
+        <field>costAccumulated</field>
+        <field>tokensConsumed</field>
+      </include>
+    </on-interval>
+    <on-budget-warning>
+      <action>request-checkpoint</action>
+      <include>
+        <field>budgetUsed</field>
+        <field>requestBudgetExtension</field>
+        <field>justification</field>
+      </include>
+    </on-budget-warning>
+  </checkpoints>
+
+  <!-- Telemetry hooks: emit CostAwareTelemetryEvent at each checkpoint -->
+  <telemetry>
+    <emit-on>checkpoint</emit-on>
+    <emit-on>budget-warning</emit-on>
+    <emit-on>hard-stop</emit-on>
+    <fields>
+      <field source="SDKResultMessage">total_cost_usd</field>
+      <field source="SDKResultMessage">duration_ms</field>
+      <field source="SDKResultMessage">duration_api_ms</field>
+      <field source="SDKResultMessage">num_turns</field>
+      <field source="SessionCostTracker">organizationId</field>
+      <field source="SessionCostTracker">sessionId</field>
+    </fields>
+  </telemetry>
+</agent-config>
