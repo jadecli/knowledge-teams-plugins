@@ -1,0 +1,98 @@
+{
+  "$schema": "./src/jade/compose/upstream-refs.schema.json",
+  "upstreams": {
+    "knowledge-work-plugins": {
+      "repo": "jadecli/knowledge-work-plugins",
+      "origin": "anthropics/knowledge-work-plugins",
+      "commit": "477c893b",
+      "syncedAt": "2026-03-06",
+      "type": "plugins",
+      "localPath": "../knowledge-work-plugins",
+      "pluginDir": "plugins"
+    },
+    "financial-services-plugins": {
+      "repo": "anthropics/financial-services-plugins",
+      "origin": "anthropics/financial-services-plugins",
+      "commit": null,
+      "syncedAt": null,
+      "type": "plugins",
+      "localPath": "../financial-services-plugins",
+      "pluginDir": "plugins"
+    },
+    "claude-code": {
+      "repo": "anthropics/claude-code",
+      "origin": "anthropics/claude-code",
+      "commit": null,
+      "syncedAt": null,
+      "type": "sdk",
+      "npmPackage": "@anthropic-ai/claude-code"
+    },
+    "claude-plugins-official": {
+      "repo": "anthropics/claude-plugins-official",
+      "origin": "anthropics/claude-plugins-official",
+      "commit": null,
+      "syncedAt": null,
+      "type": "plugins",
+      "localPath": "../claude-plugins-official",
+      "pluginDir": "plugins"
+    }
+  },
+  "mcpServers": {
+    "github": {
+      "npmPackage": "@modelcontextprotocol/server-github",
+      "org": "modelcontextprotocol",
+      "requiredEnv": ["GITHUB_PERSONAL_ACCESS_TOKEN"]
+    },
+    "slack": {
+      "npmPackage": "@modelcontextprotocol/server-slack",
+      "org": "modelcontextprotocol",
+      "requiredEnv": ["SLACK_BOT_TOKEN", "SLACK_TEAM_ID"]
+    },
+    "neon": {
+      "npmPackage": "@neondatabase/mcp-server-neon",
+      "org": "neondatabase",
+      "requiredEnv": ["NEON_API_KEY"]
+    },
+    "stripe": {
+      "npmPackage": "@stripe/agent-toolkit",
+      "org": "stripe",
+      "requiredEnv": ["STRIPE_SECRET_KEY"]
+    }
+  },
+  "sdks": {
+    "anthropic": {
+      "npmPackage": "@anthropic-ai/sdk",
+      "version": "^0.78.0"
+    },
+    "claude-agent-sdk": {
+      "npmPackage": "@anthropic-ai/claude-agent-sdk",
+      "version": null
+    },
+    "tweakcc": {
+      "npmPackage": "tweakcc",
+      "version": "^4.0.11"
+    }
+  },
+  "cloudProviders": {
+    "anthropic-direct": {
+      "envKey": "ANTHROPIC_API_KEY",
+      "authMode": "api-key"
+    },
+    "anthropic-pro-max": {
+      "envKey": null,
+      "authMode": "pro-max"
+    },
+    "aws-bedrock": {
+      "envKey": "AWS_ACCESS_KEY_ID",
+      "authMode": "bedrock",
+      "requiredEnv": ["AWS_ACCESS_KEY_ID", "AWS_SECRET_ACCESS_KEY", "AWS_REGION"],
+      "optionalEnv": ["AWS_SESSION_TOKEN", "ANTHROPIC_BEDROCK_MODEL_ID"]
+    },
+    "gcp-vertex": {
+      "envKey": "GOOGLE_APPLICATION_CREDENTIALS",
+      "authMode": "vertex",
+      "requiredEnv": ["GOOGLE_APPLICATION_CREDENTIALS", "CLOUD_ML_REGION"],
+      "optionalEnv": ["ANTHROPIC_VERTEX_PROJECT_ID"]
+    }
+  }
+}

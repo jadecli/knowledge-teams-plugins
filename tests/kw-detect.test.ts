@@ -89,14 +89,14 @@ describe("detectKW", () => {
 });
 
 describe("getAllSeats", () => {
-  it("returns exactly 13 seats", () => {
+  it("returns exactly 14 seats", () => {
     const seats = getAllSeats(SEATS_PATH);
-    expect(seats).toHaveLength(13);
+    expect(seats).toHaveLength(14);
   });
 
-  it("seats have sequential KW IDs from KW-01 to KW-13", () => {
+  it("seats have sequential KW IDs from KW-01 to KW-14", () => {
     const seats = getAllSeats(SEATS_PATH);
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 14; i++) {
       expect(seats[i].kwId).toBe(`KW-${String(i + 1).padStart(2, "0")}`);
     }
   });

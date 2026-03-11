@@ -1,0 +1,39 @@
+{
+  "$schema": "./src/jade/compose/upstream-refs.schema.json",
+  "version": "1",
+  "organization": "Acme Corp",
+  "cloudAuth": {
+    "provider": "anthropic-direct",
+    "apiKey": "sk-ant-api03-YOUR-KEY-HERE"
+  },
+  "adminAuth": {
+    "adminApiKey": "sk-ant-admin01-YOUR-ADMIN-KEY-HERE",
+    "organizationId": "org-YOUR-ORG-ID"
+  },
+  "services": {
+    "github": { "token": "ghp_YOUR-GITHUB-TOKEN" },
+    "slack": { "botToken": "xoxb-YOUR-SLACK-BOT-TOKEN", "teamId": "T0YOUR-TEAM" },
+    "neon": { "apiKey": "YOUR-NEON-API-KEY" },
+    "stripe": { "secretKey": "sk_test_YOUR-STRIPE-KEY" }
+  },
+  "identity": {
+    "ssoProvider": "okta",
+    "domainCapture": ["acme.com"]
+  },
+  "telemetry": {
+    "enabled": true,
+    "endpoint": "https://otel-collector.internal.acme.com:4318",
+    "exporter": "otlp",
+    "resourceAttributes": {
+      "department": "engineering",
+      "cost_center": "eng-platform"
+    }
+  },
+  "managedSettings": {
+    "disableBypassPermissions": true,
+    "additionalDenyRules": [
+      "Bash(sudo *)",
+      "Read(./.env*)"
+    ]
+  }
+}

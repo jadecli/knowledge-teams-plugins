@@ -12,7 +12,8 @@
     { "kwId": "KW-10", "plugin": "jade-vp-legal", "title": "CLO", "sto": "gc" },
     { "kwId": "KW-11", "plugin": "jade-vp-search", "title": "CSO2", "sto": "cso2" },
     { "kwId": "KW-12", "plugin": "jade-vp-research", "title": "CRO2", "sto": "cro2" },
-    { "kwId": "KW-13", "plugin": "jade-vp-productivity", "title": "CPO2", "sto": "coo" }
+    { "kwId": "KW-13", "plugin": "jade-vp-productivity", "title": "CPO2", "sto": "coo" },
+    { "kwId": "KW-14", "plugin": "jade-vp-admin", "title": "CIO", "sto": "cio" }
   ],
   "repoMap": {
     "jadecli/knowledge-teams-plugins": "KW-02",

@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jade-test-manifest-v1",
+  "title": "Jade Test Manifest",
+  "description": "Machine-readable, version-controlled test manifest with inline rationale for agent consumption. Every test documents WHY it exists, what breaks if removed, and upstream/downstream dependencies.",
+  "type": "object",
+  "required": ["$schema", "projectName", "generatedAt", "tests", "dependencyGraph", "checkpointCoverage", "silentFailureGuards"],
+  "properties": {
+    "$schema": { "const": "jade-test-manifest-v1" },
+    "projectName": { "type": "string" },
+    "generatedAt": { "type": "string", "format": "date-time" },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["testId", "testFile", "testName", "rationale", "rationaleDescription", "impactIfRemoved", "upstreamDeps", "downstreamDeps", "introducedInCommit", "lastModifiedInCommit"],
+        "properties": {
+          "testId": {
+            "type": "string",
+            "description": "Unique ID. Convention: {DOMAIN}-{AREA}-{NNN}. E.g. SEC-AUTH-001"
+          },
+          "testFile": {
+            "type": "string",
+            "description": "Relative path to the test file"
+          },
+          "testName": {
+            "type": "string",
+            "description": "The describe/it string that identifies this test"
+          },
+          "rationale": {
+            "enum": [
+              "regression",
+              "requirement",
+              "security-boundary",
+              "integration",
+              "silent-failure-guard",
+              "upstream-contract",
+              "downstream-contract",
+              "performance"
+            ],
+            "description": "Machine-readable category of WHY this test exists"
+          },
+          "rationaleDescription": {
+            "type": "string",
+            "description": "Human-readable explanation of why this test exists"
+          },
+          "impactIfRemoved": {
+            "type": "string",
+            "description": "What breaks or becomes unguarded if this test is deleted"
+          },
+          "upstreamDeps": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Source files this test validates the contract of"
+          },
+          "downstreamDeps": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Consumers that depend on the behavior this test guards"
+          },
+          "securityCheckpoint": {
+            "enum": [
+              "codebase-manifest",
+              "commit-history-review",
+              "dependency-tracking",
+              "threat-model",
+              "silent-failure-prevention",
+              "test-manifest-written",
+              "tests-optimized",
+              "dependency-map",
+              "all-clear"
+            ],
+            "description": "Which security checkpoint requires this test, if any"
+          },
+          "introducedInCommit": { "type": "string" },
+          "lastModifiedInCommit": { "type": "string" }
+        }
+      }
+    },
+    "dependencyGraph": {
+      "type": "object",
+      "description": "Maps testId → array of testIds it depends on. If test A fails, downstream tests B,C may be suspect.",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "checkpointCoverage": {
+      "type": "object",
+      "description": "Maps each SecurityCheckpoint to the testIds that cover it",
+      "additionalProperties": {
+        "type": "array",
+        "items": { "type": "string" }
+      }
+    },
+    "silentFailureGuards": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "TestIds specifically guarding against silent failures"
+    }
+  }
+}
