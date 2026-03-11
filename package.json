@@ -7,7 +7,11 @@
     "build": "tsc",
     "test": "vitest run",
     "test:watch": "vitest",
-    "review": "tsx scripts/run-skeptical-team.ts"
+    "review": "tsx scripts/run-skeptical-team.ts",
+    "db:push": "drizzle-kit push",
+    "db:generate": "drizzle-kit generate",
+    "db:studio": "drizzle-kit studio",
+    "llms:sync": "tsx lib/llms-sync.ts"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "0.2.72",
@@ -27,10 +31,15 @@
     "@modelcontextprotocol/server-filesystem": "2026.1.14",
     "@modelcontextprotocol/server-memory": "2026.1.26",
     "@modelcontextprotocol/server-sequential-thinking": "2025.12.18",
-    "zod": "4.0.0"
+    "zod": "4.0.0",
+    "drizzle-orm": "0.44.0",
+    "@neondatabase/serverless": "1.0.0",
+    "drizzle-zod": "0.7.0",
+    "lru-cache": "11.0.0"
   },
   "devDependencies": {
     "@anthropic-ai/claude-code": "2.1.72",
+    "drizzle-kit": "0.30.0",
     "@types/node": "^25.4.0",
     "tsx": "^4.19.0",
     "typescript": "^5.5.0",
