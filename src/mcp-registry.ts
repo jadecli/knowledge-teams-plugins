@@ -503,7 +503,7 @@ export const MCP_SERVERS: McpServerEntry[] = [
  * ---
  * dataSource: npm registry (@anthropic-ai scope)
  * lastUpdated: "2026-03-11"
- * totalPackages: 8
+ * totalPackages: 10
  * ---
  */
 export const ANTHROPIC_PACKAGES: CanonicalPackage[] = [
@@ -515,6 +515,7 @@ export const ANTHROPIC_PACKAGES: CanonicalPackage[] = [
   { name: "@anthropic-ai/foundry-sdk",        version: "0.2.3",   registry: "npm", language: SupportedLanguage.TYPESCRIPT, installed: true },
   { name: "@anthropic-ai/tokenizer",          version: "0.0.4",   registry: "npm", language: SupportedLanguage.TYPESCRIPT, installed: true },
   { name: "@anthropic-ai/sandbox-runtime",    version: "0.0.40",  registry: "npm", language: SupportedLanguage.TYPESCRIPT, installed: true },
+  { name: "@anthropic-ai/dxt",               version: "0.2.6",   registry: "npm", language: SupportedLanguage.TYPESCRIPT, installed: true },
   { name: "@anthropic-ai/mcpb",              version: "2.1.2",   registry: "npm", language: SupportedLanguage.TYPESCRIPT, installed: true },
 ];
 
