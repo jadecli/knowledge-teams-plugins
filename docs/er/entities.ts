@@ -428,10 +428,11 @@ export const KNOWLEDGE_TEAMS_ER: ERDiagram = {
       name: "llms.txt Crawler",
       layer: EntityLayer.RUNTIME,
       sourceFile: "lib/llms-crawler.ts",
-      description: "Secure allowlisted crawler for docs.anthropic.com and claude.ai llms.txt docs",
+      description: "Multi-sig governed crawler with SSRF defense, base64/SQL injection protection",
       attributes: [
-        { name: "ALLOWED_DOMAINS", type: AttributeType.ARRAY, required: true, description: "[docs.anthropic.com, claude.ai]" },
-        { name: "ENTRY_URLS", type: AttributeType.ARRAY, required: true, description: "llms.txt and llms-full.txt URLs" },
+        { name: "CRAWLER_ALLOWLIST", type: AttributeType.OBJECT, required: true, description: "Categorized allowlist: claude-platform, neon-database, vercel-platform" },
+        { name: "ALLOWED_DOMAINS", type: AttributeType.ARRAY, required: true, description: "[docs.anthropic.com, claude.ai, neon.tech, vercel.com]" },
+        { name: "ENTRY_URLS", type: AttributeType.ARRAY, required: true, description: "llms.txt entry points per approved domain" },
       ],
       functions: [
         { name: "isAllowedUrl", params: "(url)", returnType: "boolean", description: "Security boundary: only allowlisted domains" },

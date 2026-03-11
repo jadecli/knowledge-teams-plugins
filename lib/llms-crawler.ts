@@ -18,12 +18,32 @@ export interface CrawlResult {
 }
 
 // ─── Allowlist ──────────────────────────────────────────────────────────────
+// MULTI-SIG REQUIREMENT: Changes to ALLOWED_DOMAINS or ENTRY_URLS require:
+//   1. PR approved by a human reviewer (not just CI)
+//   2. All CI/CD checks pass
+//   3. Architecture guardrails review passes
+//   4. No force-pushes — commits must go through PR flow
+// Agents MUST NOT modify this allowlist without human approval.
+// Each domain must serve verified llms.txt documentation from a known provider.
 
-const ALLOWED_DOMAINS = ["docs.anthropic.com", "claude.ai"] as const;
+/** Approved crawler source categories and their verified domains. */
+export const CRAWLER_ALLOWLIST = {
+  /** Claude platform and Claude Code documentation */
+  "claude-platform": ["docs.anthropic.com", "claude.ai"],
+  /** Neon serverless Postgres documentation */
+  "neon-database": ["neon.tech"],
+  /** Vercel platform documentation */
+  "vercel-platform": ["vercel.com"],
+} as const;
+
+/** Flattened domain allowlist derived from CRAWLER_ALLOWLIST categories. */
+const ALLOWED_DOMAINS: readonly string[] = Object.values(CRAWLER_ALLOWLIST).flat();
 
 const ENTRY_URLS = [
   "https://docs.anthropic.com/llms.txt",
   "https://docs.anthropic.com/llms-full.txt",
+  "https://neon.tech/llms.txt",
+  "https://vercel.com/llms.txt",
 ] as const;
 
 /** Security boundary: only crawl allowlisted Anthropic domains. */

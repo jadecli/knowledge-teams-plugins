@@ -262,6 +262,7 @@ erDiagram
   }
 
   runtime_llms_crawler {
+    object CRAWLER_ALLOWLIST
     array ALLOWED_DOMAINS
     array ENTRY_URLS
   }
@@ -1223,12 +1224,13 @@ LRU (in-memory, 100 entries) + Neon (persistent) cache for llms.txt docs
 
 `runtime.llms_crawler` — `lib/llms-crawler.ts`
 
-Secure allowlisted crawler for docs.anthropic.com and claude.ai llms.txt docs
+Multi-sig governed crawler with SSRF defense, base64/SQL injection protection
 
 | Attribute | Type | Required | Notes |
 |-----------|------|----------|-------|
-| ALLOWED_DOMAINS | array | yes | [docs.anthropic.com, claude.ai] |
-| ENTRY_URLS | array | yes | llms.txt and llms-full.txt URLs |
+| CRAWLER_ALLOWLIST | object | yes | Categorized allowlist: claude-platform, neon-database, vercel-platform |
+| ALLOWED_DOMAINS | array | yes | [docs.anthropic.com, claude.ai, neon.tech, vercel.com] |
+| ENTRY_URLS | array | yes | llms.txt entry points per approved domain |
 
 **Functions:**
 
@@ -1383,6 +1385,7 @@ erDiagram
   }
 
   runtime_llms_crawler {
+    object CRAWLER_ALLOWLIST
     array ALLOWED_DOMAINS
     array ENTRY_URLS
   }

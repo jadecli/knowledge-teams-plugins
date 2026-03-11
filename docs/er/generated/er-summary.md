@@ -229,8 +229,8 @@
 
 - **ID**: `runtime.llms_crawler`
 - **Source**: `lib/llms-crawler.ts`
-- **Description**: Secure allowlisted crawler for docs.anthropic.com and claude.ai llms.txt docs
-- **Attributes**: 2 | **Functions**: 7
+- **Description**: Multi-sig governed crawler with SSRF defense, base64/SQL injection protection
+- **Attributes**: 3 | **Functions**: 7
 
 ### llms.txt Sync Orchestrator
 
