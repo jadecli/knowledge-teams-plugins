@@ -1,8 +1,9 @@
 /**
  * jade-vp-admin SDK entry point.
- * Re-exports all admin types and utilities.
+ * Re-exports admin types, utilities, and API client.
  */
 
+// Types
 export type {
   BillingPlan,
   PermissionMode,
@@ -23,11 +24,29 @@ export type {
   DomainAudit,
   AuditSynthesis,
   OnboardingStatus,
-} from './types';
+} from './types.js';
 
+// Helpers
 export {
   getManagedSettingsPath,
   buildManagedSettings,
   buildTelemetryEnv,
   scoreLockdown,
-} from './helpers';
+} from './helpers.js';
+
+// Admin API client
+export {
+  AdminApiClient,
+  AdminApiError,
+} from './client.js';
+
+export type {
+  AdminClientConfig,
+  OrgInfo,
+  OrgMember,
+  Workspace,
+  ApiKeyInfo,
+  UsageReportParams,
+  CostReportParams,
+  PaginatedResponse,
+} from './client.js';

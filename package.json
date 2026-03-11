@@ -20,7 +20,10 @@
   },
   "exports": {
     ".": "./dist/src/jade/kw/index.js",
-    "./kw": "./dist/src/jade/kw/index.js"
+    "./kw": "./dist/src/jade/kw/index.js",
+    "./admin": "./dist/src/jade/admin/index.js",
+    "./deploy": "./dist/src/jade/deploy/index.js",
+    "./compose": "./dist/compose/loader.js"
   },
   "license": "MIT"
 }

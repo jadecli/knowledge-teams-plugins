@@ -7,7 +7,7 @@ import type {
   ManagedSettings,
   PermissionRules,
   TelemetryConfig,
-} from './types';
+} from './types.js';
 
 /**
  * Returns the platform-appropriate path for managed settings deployment.

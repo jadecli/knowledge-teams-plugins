@@ -1,5 +1,6 @@
 {
   "repo": "jadecli/knowledge-work-plugins",
   "commit": "477c893b",
-  "syncedAt": "2026-03-06"
+  "syncedAt": "2026-03-06",
+  "_deprecated": "Use upstream-refs.json for multi-upstream management. This file kept for backward compatibility with existing compose/loader.ts."
 }
