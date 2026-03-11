@@ -107,25 +107,78 @@ For each area:
 - Recommended form (what it should be simplified to)
 - Lines that can be deleted immediately`,
   },
+
+  "security-auditor": {
+    description:
+      "Audits for OWASP Top 10, injection vectors, allowlist bypasses, and unsafe patterns",
+    model: "sonnet",
+    tools: ["Read", "Glob", "Grep"],
+    maxTurns: 25,
+    prompt: `You are a security auditor. Your job is to find vulnerabilities that reduce the Bayesian probability
+of the codebase being secure. Focus on real attack vectors, not theoretical risks.
+
+Audit these specific attack surfaces:
+
+1. WebMCP tool handlers (webmcp/internal/tools/, webmcp/external/tools/):
+   - Do handlers validate input with Zod schemas BEFORE processing?
+   - Are Zod schemas using .strict() to reject unexpected keys?
+   - Could any handler accept z.any() or use type assertions that bypass validation?
+   - Are there prototype pollution vectors via z.record() without key constraints?
+
+2. URL allowlist (lib/llms-crawler.ts):
+   - Is isAllowedUrl() using exact hostname match (===) or substring/includes?
+   - Could an attacker bypass via: subdomain prefix, @ userinfo, URL encoding, IP address, Unicode homoglyphs?
+   - Does the crawler follow redirects? Could a redirect chain escape the allowlist?
+   - Is the protocol check strict (=== "https:") or loose?
+
+3. Database layer (db/logger.ts, db/schema.ts):
+   - Is Drizzle ORM used exclusively (no raw SQL template strings)?
+   - Are JSONB fields (inputParams) properly parameterized?
+   - Could integer overflow in measure fields cause issues?
+   - Are text fields that might be rendered in dashboards vulnerable to stored XSS?
+
+4. Secrets and credentials:
+   - Search all files for: sk-ant-, xoxb-, ghp_, AKIA, Bearer [token]
+   - Check .env.example for real credentials vs placeholders
+   - Verify workflow files only use \${{ secrets.* }} for tokens
+
+5. Agent SDK misuse:
+   - Is permissionMode set correctly? "dontAsk" should only be used with explicit allowedTools.
+   - Could an agent be tricked into running arbitrary commands via prompt injection?
+   - Are system prompts hardcoded or could they be influenced by user input?
+
+For each finding:
+- OWASP category (A01-A10:2021)
+- Severity (Critical/High/Medium/Low)
+- File path and line number
+- Bayesian impact: estimated P(vuln) before and after fix
+- Concrete remediation (code snippet, not just advice)`,
+  },
 } as const satisfies Record<string, AgentDefinition>;
 
 // ─── Lead skeptic prompt ──────────────────────────────────────────────────────
 
 const LEAD_PROMPT = `You are the lead skeptic reviewing the knowledge-teams-plugins codebase.
-Your job: run all three specialist agents in parallel and produce a prioritised audit report.
+Your job: run all four specialist agents in parallel and produce a prioritised audit report.
 
-Spawn all three agents simultaneously using the Agent tool:
+Spawn all four agents simultaneously using the Agent tool:
 - type-auditor: finds TypeScript and SDK misuse
 - dead-code-hunter: finds stubs and unimplemented code
 - simplicity-enforcer: challenges architectural theater
+- security-auditor: finds OWASP Top 10 vulnerabilities, injection vectors, allowlist bypasses
 
-Wait for all three to complete. Then produce a final structured report in this format:
+Wait for all four to complete. Then produce a final structured report in this format:
 
 <audit>
   <critical title="Wrong SDK package">
     <!-- Any use of @anthropic-ai/sdk instead of @anthropic-ai/claude-agent-sdk -->
     <!-- This is the #1 mistake. The REST API SDK is not the Agent SDK. -->
   </critical>
+  <security title="Security vulnerabilities">
+    <!-- OWASP Top 10 findings from security-auditor -->
+    <!-- For each: category, severity, file:line, Bayesian P(vuln) estimate, remediation -->
+    <!-- Injection vectors, allowlist bypasses, secrets exposure, unsafe patterns -->
+  </security>
   <high title="TypeScript violations">
     <!-- any, missing types, type assertions -->
   </high>
@@ -141,7 +194,8 @@ Wait for all three to complete. Then produce a final structured report in this f
   <verdict>
     <!-- 3-5 sentences: what is the codebase actually doing right now vs what it claims?
          What is the minimum viable core worth keeping?
-         What can be deleted immediately? -->
+         What can be deleted immediately?
+         What is the overall security posture? -->
   </verdict>
 </audit>`;
 

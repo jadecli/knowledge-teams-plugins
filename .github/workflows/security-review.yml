@@ -1,0 +1,126 @@
+name: Security Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  # ─── Layer 1: Custom security scan via claude-code-action (OAuth) ───────────
+  security-scan:
+    name: Claude Security Scan (OAuth)
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run security tests
+        run: npx vitest run tests/security/
+
+      - name: Security Scan (Claude)
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are a security reviewer for jadecli/knowledge-teams-plugins.
+            Your goal is to find real vulnerabilities — not to lecture about best practices.
+
+            ## PR Context
+            Repository: ${{ github.repository }}
+            PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+            Base: ${{ github.event.pull_request.base.ref }}
+            Head: ${{ github.event.pull_request.head.ref }}
+
+            ## Step 1: Read security policy
+            Read .github/security-scan-instructions.md for Jade-specific security concerns.
+
+            ## Step 2: Understand the change
+            Run: git diff ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --name-only
+            Then read each changed file.
+
+            ## Step 3: Security analysis
+
+            For each changed file, check for:
+
+            ### A. Injection (A03:2021)
+            - SQL injection: any raw SQL strings, template literals with user input, or
+              bypassing Drizzle ORM's parameterization
+            - Command injection: any exec/spawn/system calls with unsanitized input
+            - JSONB injection: malicious payloads in jsonb() columns
+            - Prompt injection: user-controlled content reaching system prompts
+
+            ### B. Broken Access Control (A01:2021)
+            - URL allowlist bypasses in lib/llms-crawler.ts
+            - Missing input validation in WebMCP tool handlers
+            - Overly permissive Zod schemas (z.any(), z.unknown() without refinement)
+
+            ### C. Cryptographic Failures (A02:2021)
+            - Hardcoded secrets: sk-ant-, xoxb-, ghp_, AKIA, Bearer tokens
+            - Weak hashing or missing integrity checks
+            - HTTP instead of HTTPS for external calls
+
+            ### D. Security Misconfiguration (A05:2021)
+            - Agent SDK permissionMode set too broadly
+            - Missing .strict() on Zod schemas accepting external input
+            - Debug/verbose flags left enabled
+
+            ### E. SSRF (A10:2021)
+            - fetch() calls with user-controlled URLs not checked against allowlist
+            - Redirect following that could escape allowlisted domains
+
+            ## Step 4: Report
+
+            ### 🔒 Security Findings
+            For each finding:
+            - **Severity**: Critical / High / Medium / Low
+            - **OWASP**: Category ID
+            - **File:line**: exact location
+            - **Description**: what the vulnerability is
+            - **Proof**: how an attacker would exploit it
+            - **Fix**: concrete code change
+
+            ### 🛡️ Bayesian Security Posture
+            Estimate: does this PR increase or decrease the overall P(vulnerability)?
+            Reference the security tests in tests/security/ — are they covering the
+            changed code paths?
+
+            ### Verdict
+            - **SECURE** — No security issues found
+            - **ADVISORY** — Low/medium findings, ship with follow-up
+            - **BLOCK** — Critical/high findings that must be fixed before merge
+          claude_args: "--max-turns 8"
+          show_full_output: true
+
+  # ─── Layer 2: Dedicated security review via claude-code-security-review ─────
+  security-review:
+    name: Claude Security Review (API Key)
+    runs-on: ubuntu-latest
+    # Only run if CLAUDE_API_KEY is configured
+    if: ${{ secrets.CLAUDE_API_KEY != '' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Security Review
+        uses: anthropics/claude-code-security-review@main
+        with:
+          claude-api-key: ${{ secrets.CLAUDE_API_KEY }}
+          comment-pr: true
+          claude-model: claude-sonnet-4-6
+          custom-security-scan-instructions: .github/security-scan-instructions.md
