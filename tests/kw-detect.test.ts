@@ -1,7 +1,11 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { resolve } from "path";
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { execSync } from "child_process";
 import {
   detectKW,
+  detectKWFromCwd,
   getAllSeats,
   getSeatByKwId,
   deriveEffort,
@@ -37,10 +41,12 @@ describe("detectKW", () => {
     expect(result.kwId).toBe("KW-01");
     expect(result.plugin).toBe("jade-cofounder");
     expect(result.title).toBe("CEO");
-    // CEO has no STO, so falls back to defaults for model/budget
-    expect(result.model).toBe("claude-sonnet-4-6");
-    expect(result.effort).toBe("medium");
-    expect(result.fitnessFunction).toBeNull();
+    expect(result.model).toBe("claude-opus-4-6");
+    expect(result.effort).toBe("high");
+    expect(result.budgetToolCalls).toBe(60);
+    expect(result.fitnessFunction).toBe(
+      "quarterly OP1 goal attainment rate above 80%"
+    );
     expect(result.mapped).toBe(true);
   });
 
@@ -56,6 +62,10 @@ describe("detectKW", () => {
     const result = detectKW("jadecli-labs/llms-txt-feed", SEATS_PATH, S_TEAM_DIR);
     expect(result.kwId).toBe("KW-12");
     expect(result.plugin).toBe("jade-vp-research");
+    expect(result.title).toBe("CRO2");
+    expect(result.model).toBe("claude-opus-4-6");
+    expect(result.effort).toBe("high");
+    expect(result.budgetToolCalls).toBe(50);
     expect(result.mapped).toBe(true);
   });
 
@@ -79,14 +89,14 @@ describe("detectKW", () => {
 });
 
 describe("getAllSeats", () => {
-  it("returns exactly 13 seats", () => {
+  it("returns exactly 14 seats", () => {
     const seats = getAllSeats(SEATS_PATH);
-    expect(seats).toHaveLength(13);
+    expect(seats).toHaveLength(14);
   });
 
-  it("seats have sequential KW IDs from KW-01 to KW-13", () => {
+  it("seats have sequential KW IDs from KW-01 to KW-14", () => {
     const seats = getAllSeats(SEATS_PATH);
-    for (let i = 0; i < 13; i++) {
+    for (let i = 0; i < 14; i++) {
       expect(seats[i].kwId).toBe(`KW-${String(i + 1).padStart(2, "0")}`);
     }
   });
@@ -150,6 +160,41 @@ describe("parseStoFrontmatter", () => {
   });
 });
 
+describe("parseStoFrontmatter — new STO files", () => {
+  it("parses ceo.md frontmatter correctly", () => {
+    const sto = parseStoFrontmatter("ceo", S_TEAM_DIR);
+    expect(sto).not.toBeNull();
+    expect(sto!.role).toBe("Chief Executive Officer");
+    expect(sto!.model).toBe("claude-opus-4-6");
+    expect(sto!.safetyResearch).toBe("sycophancy-to-subterfuge");
+    expect(sto!.budgetToolCalls).toBe(60);
+  });
+
+  it("parses cmo.md frontmatter correctly", () => {
+    const sto = parseStoFrontmatter("cmo", S_TEAM_DIR);
+    expect(sto).not.toBeNull();
+    expect(sto!.role).toBe("Chief Marketing Officer");
+    expect(sto!.model).toBe("claude-sonnet-4-6");
+    expect(sto!.budgetToolCalls).toBe(35);
+  });
+
+  it("parses cso2.md frontmatter correctly", () => {
+    const sto = parseStoFrontmatter("cso2", S_TEAM_DIR);
+    expect(sto).not.toBeNull();
+    expect(sto!.role).toBe("Chief Search Officer");
+    expect(sto!.model).toBe("claude-sonnet-4-6");
+    expect(sto!.budgetToolCalls).toBe(40);
+  });
+
+  it("parses cro2.md frontmatter correctly", () => {
+    const sto = parseStoFrontmatter("cro2", S_TEAM_DIR);
+    expect(sto).not.toBeNull();
+    expect(sto!.role).toBe("Chief Research Officer");
+    expect(sto!.model).toBe("claude-opus-4-6");
+    expect(sto!.budgetToolCalls).toBe(50);
+  });
+});
+
 describe("extractRepoSlug", () => {
   it("extracts slug from SSH URL", () => {
     expect(
@@ -179,5 +224,63 @@ describe("extractRepoSlug", () => {
 
   it("returns null for unrecognized URL format", () => {
     expect(extractRepoSlug("not-a-url")).toBeNull();
+  });
+});
+
+describe("detectKWFromCwd — integration", () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(resolve(tmpdir(), "kw-test-"));
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it("detects KW-02 from a git repo with jadecli/knowledge-teams-plugins remote", () => {
+    execSync("git init", { cwd: tmpDir, stdio: "pipe" });
+    execSync(
+      "git remote add origin git@github.com:jadecli/knowledge-teams-plugins.git",
+      { cwd: tmpDir, stdio: "pipe" }
+    );
+    const result = detectKWFromCwd(tmpDir, SEATS_PATH, S_TEAM_DIR);
+    expect(result.kwId).toBe("KW-02");
+    expect(result.plugin).toBe("jade-vp-engineering");
+    expect(result.mapped).toBe(true);
+  });
+
+  it("detects KW-01 from a git repo with jade-cofounder HTTPS remote", () => {
+    execSync("git init", { cwd: tmpDir, stdio: "pipe" });
+    execSync(
+      "git remote add origin https://github.com/jadecli/jade-cofounder.git",
+      { cwd: tmpDir, stdio: "pipe" }
+    );
+    const result = detectKWFromCwd(tmpDir, SEATS_PATH, S_TEAM_DIR);
+    expect(result.kwId).toBe("KW-01");
+    expect(result.plugin).toBe("jade-cofounder");
+    expect(result.mapped).toBe(true);
+  });
+
+  it("returns KW-00 defaults for a git repo with unmapped remote", () => {
+    execSync("git init", { cwd: tmpDir, stdio: "pipe" });
+    execSync(
+      "git remote add origin git@github.com:some-org/some-repo.git",
+      { cwd: tmpDir, stdio: "pipe" }
+    );
+    const result = detectKWFromCwd(tmpDir, SEATS_PATH, S_TEAM_DIR);
+    expect(result.kwId).toBe("KW-00");
+    expect(result.mapped).toBe(false);
+  });
+
+  it("returns KW-00 defaults for a directory without git", () => {
+    const noGitDir = mkdtempSync(resolve(tmpdir(), "kw-nogit-"));
+    try {
+      const result = detectKWFromCwd(noGitDir, SEATS_PATH, S_TEAM_DIR);
+      expect(result.kwId).toBe("KW-00");
+      expect(result.mapped).toBe(false);
+    } finally {
+      rmSync(noGitDir, { recursive: true, force: true });
+    }
   });
 });

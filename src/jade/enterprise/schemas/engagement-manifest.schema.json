@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jade-engagement-v1",
+  "title": "Jade Enterprise Engagement Manifest",
+  "description": "Tracks the full Alex + Jade consulting engagement lifecycle for an enterprise customer.",
+  "type": "object",
+  "required": ["$schema", "engagementId", "customerName", "customerDomain", "startDate", "phases", "businessContext", "itEnvironment", "securityPosture"],
+  "properties": {
+    "$schema": { "const": "jade-engagement-v1" },
+    "engagementId": { "type": "string" },
+    "customerName": { "type": "string" },
+    "customerDomain": { "type": "string" },
+    "startDate": { "type": "string", "format": "date" },
+    "phases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["phase", "status", "owner", "artifacts"],
+        "properties": {
+          "phase": {
+            "enum": [
+              "discovery",
+              "strategy-documentation",
+              "infrastructure-setup",
+              "permission-governance",
+              "security-planning",
+              "test-driven-planning",
+              "implementation",
+              "handoff",
+              "operational"
+            ]
+          },
+          "status": {
+            "enum": ["not-started", "in-progress", "blocked", "awaiting-approval", "completed", "skipped"]
+          },
+          "owner": {
+            "enum": ["alex", "jade", "both", "customer-it", "customer-leadership"]
+          },
+          "startedAt": { "type": "string", "format": "date-time" },
+          "completedAt": { "type": "string", "format": "date-time" },
+          "blockedReason": { "type": "string" },
+          "approvedBy": { "type": "string" },
+          "artifacts": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "businessContext": {
+      "type": "object",
+      "required": ["industry", "employeeCount", "engineeringHeadcount", "complianceFrameworks"],
+      "properties": {
+        "industry": { "type": "string" },
+        "employeeCount": { "type": "integer", "minimum": 0 },
+        "engineeringHeadcount": { "type": "integer", "minimum": 0 },
+        "complianceFrameworks": { "type": "array", "items": { "type": "string" } },
+        "existingTools": { "type": "array", "items": { "type": "string" } },
+        "strategicPriorities": { "type": "array", "items": { "type": "string" } },
+        "uniqueBusinessRules": { "type": "array", "items": { "type": "string" } },
+        "dataResidencyRequirements": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "itEnvironment": {
+      "type": "object",
+      "required": ["cloudProvider", "gitProvider", "gitOrgName", "secretProvider"],
+      "properties": {
+        "cloudProvider": { "enum": ["aws", "gcp", "azure", "oracle", "multi-cloud"] },
+        "gitProvider": { "enum": ["github", "gitlab", "bitbucket"] },
+        "gitOrgName": { "type": "string" },
+        "ssoProvider": { "type": "string" },
+        "secretProvider": {
+          "enum": ["github-org-secrets", "1password", "aws-secrets-manager", "azure-key-vault", "gcp-secret-manager", "oracle-vault"]
+        },
+        "ciPlatform": { "type": "string" },
+        "intranetDomain": { "type": "string" }
+      }
+    },
+    "securityPosture": {
+      "type": "object",
+      "required": ["checkpoints", "dependencyAudit", "allCheckpointsPassed", "codeWritingApproved"],
+      "properties": {
+        "checkpoints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["checkpoint", "passed", "checkedBy", "blockingIssues"],
+            "properties": {
+              "checkpoint": {
+                "enum": [
+                  "codebase-manifest",
+                  "commit-history-review",
+                  "dependency-tracking",
+                  "threat-model",
+                  "silent-failure-prevention",
+                  "test-manifest-written",
+                  "tests-optimized",
+                  "dependency-map",
+                  "all-clear"
+                ]
+              },
+              "passed": { "type": "boolean" },
+              "checkedAt": { "type": "string", "format": "date-time" },
+              "checkedBy": { "enum": ["alex", "jade", "both", "customer-it", "customer-leadership"] },
+              "notes": { "type": "string" },
+              "blockingIssues": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "dependencyAudit": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["packageName", "currentVersion", "latestVersion", "health", "isClaudeSecurity", "cveIds"],
+            "properties": {
+              "packageName": { "type": "string" },
+              "currentVersion": { "type": "string" },
+              "latestVersion": { "type": "string" },
+              "health": { "enum": ["healthy", "patch-available", "minor-available", "major-available", "vulnerable", "deprecated"] },
+              "isClaudeSecurity": { "type": "boolean" },
+              "cveIds": { "type": "array", "items": { "type": "string" } },
+              "lastCheckedAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "allCheckpointsPassed": { "type": "boolean" },
+        "codeWritingApproved": { "type": "boolean" }
+      }
+    }
+  }
+}

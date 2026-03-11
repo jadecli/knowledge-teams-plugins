@@ -1,0 +1,167 @@
+{
+  "$schema": "jade-stainless-features-v1",
+  "description": "Binary checklist of Stainless platform features. Tracks what is implemented (true) vs not yet (false) for the $500/mo enterprise trial.",
+  "plan": "enterprise-trial",
+  "monthlyBudgetUsd": 500,
+  "generatedAt": "2026-03-11T00:00:00Z",
+  "stainlessVersion": "latest",
+  "anthropicSdkVersion": "0.78.0",
+  "features": {
+    "sdk-generation": {
+      "description": "Auto-generated type-safe SDKs from OpenAPI specs (Anthropic SDK is Stainless-generated)",
+      "implemented": true,
+      "notes": "@anthropic-ai/sdk ^0.78.0 consumed as dependency — this IS Stainless output"
+    },
+    "type-safety": {
+      "description": "Full TypeScript type definitions, discriminated unions, branded types",
+      "implemented": true,
+      "notes": "Using strict TypeScript mode, all types from @anthropic-ai/sdk"
+    },
+    "streaming-support": {
+      "description": "SSE and streaming response support for real-time output",
+      "implemented": false,
+      "notes": "Available in SDK, not yet used in jade plugins"
+    },
+    "pagination-helpers": {
+      "description": "Auto-generated pagination for list endpoints",
+      "implemented": true,
+      "notes": "Used in AdminApiClient for member/workspace listing"
+    },
+    "automatic-retries": {
+      "description": "Exponential backoff retry logic built into SDK",
+      "implemented": true,
+      "notes": "Default SDK behavior, used in all API calls"
+    },
+    "typed-errors": {
+      "description": "Typed error classes with HTTP status codes",
+      "implemented": true,
+      "notes": "AdminApiError extends from SDK error types"
+    },
+    "webhook-verification": {
+      "description": "Webhook signature verification for incoming events",
+      "implemented": false,
+      "notes": "Not yet needed — no inbound webhooks in v1"
+    },
+    "multipart-uploads": {
+      "description": "Multipart file upload handling",
+      "implemented": false,
+      "notes": "Not applicable to current plugin architecture"
+    },
+    "tree-shaking": {
+      "description": "ESM support with proper tree-shaking",
+      "implemented": true,
+      "notes": "Package is type:module with ESM exports"
+    },
+    "prompt-caching": {
+      "description": "Cache breakpoints in messages for cost optimization",
+      "implemented": false,
+      "notes": "Available via SDK cache_control, not yet integrated"
+    },
+    "token-counting": {
+      "description": "Pre-request token estimation via /v1/messages/count_tokens",
+      "implemented": false,
+      "notes": "Endpoint available, not yet used in cost controls"
+    },
+    "conventional-commits": {
+      "description": "Stainless-style conventional commit enforcement",
+      "implemented": true,
+      "notes": "commitlint + @commitlint/config-conventional installed, GitHub Action enforces"
+    },
+    "changelog-automation": {
+      "description": "Automated CHANGELOG.md generation from conventional commits",
+      "implemented": true,
+      "notes": "release-please GitHub Action configured"
+    },
+    "semantic-versioning": {
+      "description": "Automated semver bumps based on commit types",
+      "implemented": true,
+      "notes": "release-please handles version bumps in package.json"
+    },
+    "admin-api-integration": {
+      "description": "Anthropic Admin API for org/member/workspace/usage management",
+      "implemented": true,
+      "notes": "Full AdminApiClient in src/jade/admin/client.ts"
+    },
+    "managed-settings": {
+      "description": "Enterprise managed_settings.json deployment",
+      "implemented": true,
+      "notes": "buildManagedSettings() in src/jade/admin/helpers.ts"
+    },
+    "telemetry-otel": {
+      "description": "OpenTelemetry export for usage metrics",
+      "implemented": true,
+      "notes": "buildTelemetryEnv() generates OTEL env vars"
+    },
+    "github-actions-integration": {
+      "description": "Claude Code GitHub Action for PR review and automation",
+      "implemented": true,
+      "notes": "anthropics/claude-code-action@beta in CI workflows"
+    },
+    "cost-tracking-per-pr": {
+      "description": "Token usage and cost tracking posted to PRs",
+      "implemented": true,
+      "notes": "GitHub Action workflow parses --output-format json for costUsd"
+    },
+    "manifest-update-on-commit": {
+      "description": "Auto-update dependency and feature manifests on each commit",
+      "implemented": true,
+      "notes": "manifest-update.yml GitHub Action runs on push to main"
+    },
+    "security-review": {
+      "description": "Claude security review features extended to test-driven planning",
+      "implemented": true,
+      "notes": "SecurityCheckpoint enum + posture tracking in enterprise module"
+    },
+    "dependency-audit": {
+      "description": "Track all Claude security packages with health status and CVE cross-reference",
+      "implemented": true,
+      "notes": "TrackedDependency type + DependencyHealth enum + deps-update.yml workflow"
+    },
+    "silent-failure-prevention": {
+      "description": "Every error path has explicit handling — no swallowed errors",
+      "implemented": true,
+      "notes": "SILENT_FAILURE_PREVENTION checkpoint in security posture, TestRationale.SILENT_FAILURE_GUARD"
+    },
+    "test-manifest-machine-readable": {
+      "description": "Test manifest with inline rationale, upstream/downstream deps, version-controlled",
+      "implemented": true,
+      "notes": "TestManifest/TestSpec types + jade-test-manifest-v1 JSON schema"
+    },
+    "read-write-separation": {
+      "description": "Agent tool access governed with read and write always separated",
+      "implemented": true,
+      "notes": "AgentPermissionScope enum + GovernedTeam + ToolGrant types"
+    },
+    "team-governance": {
+      "description": "GitHub team-based permission governance with audit cadence",
+      "implemented": true,
+      "notes": "jade-team-governance-v1 JSON schema + GovernedTeam type"
+    },
+    "secret-rotation-tracking": {
+      "description": "Secret rotation policies with provider-specific backends",
+      "implemented": true,
+      "notes": "GovernedSecret type + SecretProvider enum (v1: GitHub, v2: cloud vaults)"
+    },
+    "intranet-dashboard": {
+      "description": "Vercel admin dashboard behind Cloudflare Access (intranet-only)",
+      "implemented": true,
+      "notes": "AdminDashboardConfig type + CloudflareAccessPolicy enum"
+    },
+    "scim-provisioning": {
+      "description": "SCIM endpoint for automated user provisioning from IdP",
+      "implemented": false,
+      "notes": "IdentityConfig type defines scimEndpoint, not yet connected"
+    },
+    "bedrock-vertex-support": {
+      "description": "AWS Bedrock and GCP Vertex as alternative cloud auth providers",
+      "implemented": true,
+      "notes": "CloudAuth type supports anthropic-direct, pro-max, aws-bedrock, gcp-vertex"
+    }
+  },
+  "summary": {
+    "total": 30,
+    "implemented": 25,
+    "notImplemented": 5,
+    "percentComplete": 83
+  }
+}

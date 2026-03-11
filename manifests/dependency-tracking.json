@@ -1,0 +1,105 @@
+{
+  "$schema": "jade-dependency-tracking-v1",
+  "description": "Tracks all dependencies with health status, Claude/Anthropic security package flags, and CVE cross-references. Updated by manifests-update GitHub Action on every push to main.",
+  "generatedAt": "2026-03-11T00:00:00Z",
+  "llmsTxtSources": {
+    "claudeCode": "https://code.claude.com/docs/llms.txt",
+    "claudeCodeFull": "https://code.claude.com/docs/llms-full.txt",
+    "claudePlatform": "https://platform.claude.com/docs/llms.txt",
+    "claudePlatformFull": "https://platform.claude.com/docs/llms-full.txt",
+    "_note": "docs.anthropic.com paths redirect to these canonical URLs as of 2026-03"
+  },
+  "ragAccessible": {
+    "description": "Full llms.txt files are RAG-accessible for agent context injection. Agents should fetch llms-full.txt for comprehensive API reference before making changes to SDK integration code.",
+    "fetchOnEvents": ["pre-implementation", "dependency-update", "security-review"]
+  },
+  "production": {
+    "@anthropic-ai/sdk": {
+      "currentVersion": "0.78.0",
+      "pinned": "^0.78.0",
+      "latestVersion": "0.78.0",
+      "health": "healthy",
+      "isClaudeSecurity": true,
+      "isStainlessGenerated": true,
+      "cveIds": [],
+      "changelog": "https://github.com/anthropics/anthropic-sdk-typescript/blob/main/CHANGELOG.md",
+      "llmsTxtRef": "https://docs.anthropic.com/en/docs/llms.txt",
+      "notes": "Core SDK — Stainless-generated. Check changelog before ANY version bump."
+    },
+    "tweakcc": {
+      "currentVersion": "4.0.11",
+      "pinned": "^4.0.11",
+      "latestVersion": "4.0.11",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "isStainlessGenerated": false,
+      "cveIds": [],
+      "changelog": null,
+      "notes": "System prompt patching. Used for cofounder identity injection."
+    },
+    "zod": {
+      "currentVersion": "4.3.6",
+      "pinned": "^4.3.6",
+      "latestVersion": "4.3.6",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "isStainlessGenerated": false,
+      "cveIds": [],
+      "changelog": "https://github.com/colinhacks/zod/blob/main/CHANGELOG.md",
+      "notes": "Schema validation. Peer dep of @anthropic-ai/sdk."
+    }
+  },
+  "development": {
+    "@commitlint/cli": {
+      "currentVersion": "latest",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "notes": "Conventional commit enforcement"
+    },
+    "@commitlint/config-conventional": {
+      "currentVersion": "latest",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "notes": "Conventional commit ruleset"
+    },
+    "conventional-changelog-cli": {
+      "currentVersion": "latest",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "notes": "Changelog generation from conventional commits"
+    },
+    "typescript": {
+      "currentVersion": "5.9.3",
+      "pinned": "^5.9.3",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "notes": "Strict mode required"
+    },
+    "vitest": {
+      "currentVersion": "4.0.18",
+      "pinned": "^4.0.18",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "notes": "Test runner"
+    },
+    "@types/node": {
+      "currentVersion": "25.4.0",
+      "pinned": "^25.4.0",
+      "health": "healthy",
+      "isClaudeSecurity": false,
+      "notes": "Node.js type definitions"
+    }
+  },
+  "githubActions": {
+    "actions/checkout": { "version": "v4", "health": "healthy" },
+    "actions/setup-node": { "version": "v4", "health": "healthy" },
+    "actions/github-script": { "version": "v7", "health": "healthy" },
+    "anthropics/claude-code-action": { "version": "beta", "health": "healthy", "isClaudeSecurity": true },
+    "googleapis/release-please-action": { "version": "v4", "health": "healthy" }
+  },
+  "updatePolicy": {
+    "claudeSecurityPackages": "Check llms.txt + changelog before ANY update. Never auto-merge major bumps.",
+    "stainlessGeneratedPackages": "Verify Stainless changelog. Breaking changes cascade to all API calls.",
+    "allOtherPackages": "Auto-merge patch/minor via deps-update.yml. Manual review for major."
+  }
+}

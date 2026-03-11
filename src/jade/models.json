@@ -1,0 +1,17 @@
+{
+  "models": {
+    "opus": "claude-opus-4-6",
+    "sonnet": "claude-sonnet-4-6",
+    "haiku": "claude-haiku-4-5"
+  },
+  "defaults": {
+    "pro-max": "claude-sonnet-4-6",
+    "api-key": "claude-opus-4-6",
+    "enterprise": "claude-opus-4-6"
+  },
+  "pricing": {
+    "claude-opus-4-6": { "inputPer1M": 15, "outputPer1M": 75 },
+    "claude-sonnet-4-6": { "inputPer1M": 3, "outputPer1M": 15 },
+    "claude-haiku-4-5": { "inputPer1M": 0.25, "outputPer1M": 1.25 }
+  }
+}

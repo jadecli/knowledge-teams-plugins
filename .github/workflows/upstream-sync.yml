@@ -1,0 +1,123 @@
+name: Upstream Sync
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # Daily at 06:00 UTC
+  workflow_dispatch: # Manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Read current upstream pin
+        id: pin
+        run: |
+          COMMIT=$(jq -r .commit upstream-ref.json)
+          REPO=$(jq -r .repo upstream-ref.json)
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+          echo "repo=$REPO" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "https://github.com/${{ steps.pin.outputs.repo }}.git" || true
+          git fetch upstream main
+
+      - name: Check for new upstream commits
+        id: diff
+        run: |
+          CURRENT="${{ steps.pin.outputs.commit }}"
+          LATEST=$(git rev-parse upstream/main)
+          if [ "$CURRENT" = "$LATEST" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+            echo "No new upstream commits."
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+            echo "latest=$LATEST" >> "$GITHUB_OUTPUT"
+            COUNT=$(git log --oneline "$CURRENT".."$LATEST" | wc -l)
+            echo "count=$COUNT" >> "$GITHUB_OUTPUT"
+            echo "$COUNT new upstream commits since $CURRENT"
+            git log --oneline "$CURRENT".."$LATEST"
+          fi
+
+      - name: Diff upstream plugin list
+        if: steps.diff.outputs.up_to_date == 'false'
+        id: plugins
+        run: |
+          # Compare plugin directories between pinned commit and latest
+          OLD_PLUGINS=$(git ls-tree --name-only "${{ steps.pin.outputs.commit }}" plugins/ 2>/dev/null | sort || echo "")
+          NEW_PLUGINS=$(git ls-tree --name-only upstream/main plugins/ 2>/dev/null | sort || echo "")
+          ADDED=$(comm -13 <(echo "$OLD_PLUGINS") <(echo "$NEW_PLUGINS") || true)
+          REMOVED=$(comm -23 <(echo "$OLD_PLUGINS") <(echo "$NEW_PLUGINS") || true)
+          if [ -n "$ADDED" ] || [ -n "$REMOVED" ]; then
+            echo "plugin_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Plugin changes detected:"
+            [ -n "$ADDED" ] && echo "Added: $ADDED"
+            [ -n "$REMOVED" ] && echo "Removed: $REMOVED"
+          else
+            echo "plugin_changes=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build
+        if: steps.diff.outputs.up_to_date == 'false'
+        run: npm run build
+
+      - name: Test
+        if: steps.diff.outputs.up_to_date == 'false'
+        run: npm test
+
+      - name: Update upstream-ref.json
+        if: steps.diff.outputs.up_to_date == 'false'
+        run: |
+          LATEST="${{ steps.diff.outputs.latest }}"
+          TODAY=$(date -u +%Y-%m-%d)
+          jq --arg commit "$LATEST" --arg date "$TODAY" \
+            '.commit = $commit | .synced_at = $date' \
+            upstream-ref.json > upstream-ref.tmp && mv upstream-ref.tmp upstream-ref.json
+
+      - name: Create sync PR
+        if: steps.diff.outputs.up_to_date == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="auto/upstream-sync-$(date -u +%Y%m%d)"
+          git checkout -b "$BRANCH"
+          git add upstream-ref.json
+          git commit -m "chore: sync upstream ref to ${{ steps.diff.outputs.latest }}
+
+          ${{ steps.diff.outputs.count }} new commits from ${{ steps.pin.outputs.repo }}"
+          git push -u origin "$BRANCH"
+
+          BODY="## Upstream Sync
+
+          **Repo:** ${{ steps.pin.outputs.repo }}
+          **Previous pin:** ${{ steps.pin.outputs.commit }}
+          **New pin:** ${{ steps.diff.outputs.latest }}
+          **New commits:** ${{ steps.diff.outputs.count }}
+          **Plugin changes:** ${{ steps.plugins.outputs.plugin_changes }}
+
+          ### Verification
+          - [x] Build passes
+          - [x] Tests pass"
+
+          gh pr create \
+            --title "chore: upstream sync $(date -u +%Y-%m-%d)" \
+            --body "$BODY" \
+            --base main

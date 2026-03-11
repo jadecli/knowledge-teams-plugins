@@ -1,3 +1,13 @@
 node_modules/
 dist/
 *.tsbuildinfo
+
+# Customer deployment configs (NEVER commit secrets)
+.jade/deploy.json
+deploy.json
+*.deploy.json
+
+# Environment files with secrets
+.env
+.env.*
+!.env.example

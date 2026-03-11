@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "jade-team-governance-v1",
+  "title": "Jade Team Governance Manifest",
+  "description": "Defines GitHub team structure with read/write separation, tool grants, and audit cadence. Teams persist across employee departures.",
+  "type": "object",
+  "required": ["$schema", "organizationName", "gitHubOrgName", "ownershipMode", "teams", "auditSchedule"],
+  "properties": {
+    "$schema": { "const": "jade-team-governance-v1" },
+    "organizationName": { "type": "string" },
+    "gitHubOrgName": { "type": "string" },
+    "ownershipMode": {
+      "enum": ["v1-manual-audit", "v2-hr-integrated"],
+      "description": "v1: IT admin weekly audit. v2: HR system auto-assigns on departure."
+    },
+    "teams": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["teamSlug", "teamName", "manager", "members", "toolGrants", "auditCadence"],
+        "properties": {
+          "teamSlug": { "type": "string" },
+          "teamName": { "type": "string" },
+          "manager": { "$ref": "#/$defs/teamMember" },
+          "fallbackManager": { "$ref": "#/$defs/teamMember" },
+          "members": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/teamMember" }
+          },
+          "toolGrants": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["toolId", "scope", "grantedBy", "grantedAt", "justification"],
+              "properties": {
+                "toolId": { "type": "string" },
+                "scope": {
+                  "enum": ["read", "write", "read-write", "none"],
+                  "description": "READ and WRITE are ALWAYS separated. An agent cannot delete a database when it should only read."
+                },
+                "grantedBy": { "type": "string", "description": "GitHub username of team manager who approved" },
+                "grantedAt": { "type": "string", "format": "date-time" },
+                "expiresAt": { "type": "string", "format": "date-time", "description": "Time-boxed grants for external collaborators" },
+                "justification": { "type": "string", "description": "Why this scope was granted — audit trail" }
+              }
+            }
+          },
+          "auditCadence": { "enum": ["weekly", "biweekly", "monthly"] },
+          "lastAuditedAt": { "type": "string", "format": "date-time" },
+          "nextAuditDue": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "auditSchedule": {
+      "type": "object",
+      "required": ["cadence", "alertRecipients"],
+      "properties": {
+        "cadence": { "enum": ["weekly", "biweekly", "monthly"] },
+        "dayOfWeek": { "type": "integer", "minimum": 0, "maximum": 6, "description": "0=Sunday, 1=Monday, etc." },
+        "alertRecipients": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Email addresses of IT admins who receive audit alerts"
+        }
+      }
+    },
+    "secretGovernance": {
+      "type": "object",
+      "properties": {
+        "provider": {
+          "enum": ["github-org-secrets", "1password", "aws-secrets-manager", "azure-key-vault", "gcp-secret-manager", "oracle-vault"]
+        },
+        "rotationPolicyDays": { "type": "integer", "minimum": 1 },
+        "secrets": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["secretId", "readTeams", "writeTeams"],
+            "properties": {
+              "secretId": { "type": "string" },
+              "readTeams": { "type": "array", "items": { "type": "string" } },
+              "writeTeams": { "type": "array", "items": { "type": "string" } },
+              "lastRotatedAt": { "type": "string", "format": "date-time" },
+              "nextRotationDue": { "type": "string", "format": "date-time" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "teamMember": {
+      "type": "object",
+      "required": ["gitHubUsername", "email", "role"],
+      "properties": {
+        "gitHubUsername": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "role": { "enum": ["org-admin", "team-manager", "team-member", "external"] },
+        "joinedAt": { "type": "string", "format": "date-time" },
+        "lastEvent": { "enum": ["joined", "departed", "transferred", "role-changed", "suspended", "reinstated"] },
+        "lastEventAt": { "type": "string", "format": "date-time" },
+        "suspended": { "type": "boolean", "default": false }
+      }
+    }
+  }
+}

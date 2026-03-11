@@ -1,0 +1,69 @@
+name: Claude Cost Tracking
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  cost-tracking:
+    runs-on: ubuntu-latest
+    # Only run if the Anthropic API key is available
+    if: ${{ vars.ENABLE_CLAUDE_REVIEW == 'true' }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Code PR Review with Cost Tracking
+        id: claude-review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review this PR for:
+            1. Conventional commit compliance in all commit messages
+            2. Security issues (OWASP top 10, prompt injection, silent failures)
+            3. Dependency changes — check against manifests/dependency-tracking.json
+            4. Manifest consistency — do stainless-features.json counts match reality?
+
+            Output a brief summary with token usage.
+
+      - name: Post cost summary to PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const review = `${{ steps.claude-review.outputs.result }}`;
+
+            // Extract cost data if available from Claude output
+            const costMatch = review.match(/costUsd["\s:]+([0-9.]+)/);
+            const inputMatch = review.match(/inputTokens["\s:]+([0-9]+)/);
+            const outputMatch = review.match(/outputTokens["\s:]+([0-9]+)/);
+
+            const cost = costMatch ? `$${parseFloat(costMatch[1]).toFixed(4)}` : 'N/A';
+            const inputTokens = inputMatch ? parseInt(inputMatch[1]).toLocaleString() : 'N/A';
+            const outputTokens = outputMatch ? parseInt(outputMatch[1]).toLocaleString() : 'N/A';
+
+            const body = [
+              '### Claude Code Review — Cost Summary',
+              '',
+              '| Metric | Value |',
+              '|--------|-------|',
+              `| Cost | ${cost} |`,
+              `| Input Tokens | ${inputTokens} |`,
+              `| Output Tokens | ${outputTokens} |`,
+              '',
+              '> Tracked via GitHub Actions (not Claude hooks) for centralized audit trail.',
+              `> Budget: $500/mo Stainless Enterprise Trial`,
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
