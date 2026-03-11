@@ -30,7 +30,7 @@ source .env
 After auth, verify:
 ```bash
 gh auth status
-gh pr view 13 --json title  # should return PR data
+gh pr list --limit 3  # should return recent PRs
 ```
 
 ### 2. Claude Code on the web
@@ -126,10 +126,12 @@ After setup, run this from any surface to verify:
 # Should print your GitHub username
 gh auth status
 
-# Should update PR #13 body with token manifest
+# Append token manifest to current PR body
+# Replace <PR_NUMBER> with your PR number
+PR_NUMBER=$(gh pr view --json number -q '.number')
 npm run pr:manifest > /tmp/manifest.md
-CURRENT_BODY=$(gh pr view 13 --json body -q '.body')
-gh pr edit 13 --body "${CURRENT_BODY}
+CURRENT_BODY=$(gh pr view "$PR_NUMBER" --json body -q '.body')
+gh pr edit "$PR_NUMBER" --body "${CURRENT_BODY}
 
 $(cat /tmp/manifest.md)"
 ```
