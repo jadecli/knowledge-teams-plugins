@@ -6,7 +6,10 @@
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint:commits": "commitlint --from HEAD~1 --to HEAD --verbose",
+    "changelog": "conventional-changelog -p conventionalcommits -i CHANGELOG.md -s",
+    "manifests:check": "node -e \"const m=require('./manifests/stainless-features.json');console.log(m.summary.implemented+'/'+m.summary.total+' features ('+m.summary.percentComplete+'%)');\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -14,7 +17,10 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.4.3",
+    "@commitlint/config-conventional": "^20.4.3",
     "@types/node": "^25.4.0",
+    "conventional-changelog-cli": "^5.0.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   },
@@ -23,7 +29,8 @@
     "./kw": "./dist/src/jade/kw/index.js",
     "./admin": "./dist/src/jade/admin/index.js",
     "./deploy": "./dist/src/jade/deploy/index.js",
-    "./compose": "./dist/compose/loader.js"
+    "./compose": "./dist/compose/loader.js",
+    "./enterprise": "./dist/src/jade/enterprise/index.js"
   },
   "license": "MIT"
 }

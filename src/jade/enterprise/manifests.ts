@@ -19,6 +19,7 @@ import {
   AdminDashboardHost,
   AdminApiDomain,
   GitHubTeamRole,
+  CloudflareAccessPolicy,
 } from './enums';
 
 import type {
@@ -169,13 +170,13 @@ export function createAdminDashboardConfig(
     domain,
     cloudflareAccessPolicies: [
       {
-        type: 'email-domain' as const,
+        type: CloudflareAccessPolicy.EMAIL_DOMAIN,
         value: emailDomain,
         action: 'allow' as const,
       },
       {
         // Block everything else — defense in depth
-        type: 'email-domain' as const,
+        type: CloudflareAccessPolicy.EMAIL_DOMAIN,
         value: '*',
         action: 'deny' as const,
       },
