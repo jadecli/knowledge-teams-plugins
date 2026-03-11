@@ -97,6 +97,22 @@ export const ANTHROPIC_TS_PACKAGES: PinnedPackage[] = [
     production: true,
     description: "Offline tokenizer (legacy, approximate for Claude 3+ models)",
   },
+  {
+    name: "@anthropic-ai/dxt",
+    pinnedVersion: "0.2.6",
+    scope: "anthropic-sdk",
+    language: "typescript",
+    production: true,
+    description: "Desktop Extensions (DXT) toolkit for Claude Desktop plugins",
+  },
+  {
+    name: "@anthropic-ai/mcpb",
+    pinnedVersion: "2.1.2",
+    scope: "anthropic-sdk",
+    language: "typescript",
+    production: true,
+    description: "MCP Bundles (MCPB) toolkit for packaging MCP servers",
+  },
 ];
 
 // ─── MCP Core Packages (TypeScript) ───────────────────────────────────────────
@@ -118,11 +134,28 @@ export const MCP_CORE_TS_PACKAGES: PinnedPackage[] = [
     production: false,
     description: "MCP Inspector — debug and test MCP servers interactively",
   },
+  {
+    name: "@modelcontextprotocol/ext-apps",
+    pinnedVersion: "1.2.2",
+    scope: "mcp-core",
+    language: "typescript",
+    production: true,
+    description: "MCP Apps SDK — enables MCP servers to display interactive UIs in clients",
+  },
 ];
 
 // ─── MCP Server Packages (TypeScript, npm-published) ──────────────────────────
 
 export const MCP_SERVER_TS_PACKAGES: PinnedPackage[] = [
+  {
+    name: "@modelcontextprotocol/server-sequential-thinking",
+    pinnedVersion: "2025.12.18",
+    scope: "mcp-server",
+    language: "typescript",
+    production: true,
+    description: "Sequential thinking and reflective problem-solving",
+    supportsMCPs: ["sequential-thinking"],
+  },
   {
     name: "@modelcontextprotocol/server-memory",
     pinnedVersion: "2026.1.26",

@@ -16,7 +16,10 @@
     "@anthropic-ai/vertex-sdk": "0.14.4",
     "@anthropic-ai/foundry-sdk": "0.2.3",
     "@anthropic-ai/tokenizer": "0.0.4",
+    "@anthropic-ai/dxt": "0.2.6",
+    "@anthropic-ai/mcpb": "2.1.2",
     "@modelcontextprotocol/sdk": "1.27.1",
+    "@modelcontextprotocol/ext-apps": "1.2.2",
     "zod": "^4.0.0"
   },
   "devDependencies": {

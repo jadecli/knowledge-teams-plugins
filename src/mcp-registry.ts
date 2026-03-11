@@ -152,8 +152,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     id: "sequential-thinking",
     name: "Sequential Thinking",
     description: "Dynamic and reflective problem-solving through thought sequences",
-    npmPackage: null, // Not published to npm
-    pinnedVersion: null,
+    npmPackage: "@modelcontextprotocol/server-sequential-thinking",
+    pinnedVersion: "2025.12.18",
     pythonPackage: null,
     category: MCPCategory.REASONING,
     additionalCategories: [],

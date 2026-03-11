@@ -23,6 +23,8 @@ describe("SDK Package Registry", () => {
     expect(names).toContain("@anthropic-ai/vertex-sdk");
     expect(names).toContain("@anthropic-ai/foundry-sdk");
     expect(names).toContain("@anthropic-ai/tokenizer");
+    expect(names).toContain("@anthropic-ai/dxt");
+    expect(names).toContain("@anthropic-ai/mcpb");
   });
 
   it("pins exact versions (no ^ or ~ prefixes)", () => {
@@ -59,7 +61,7 @@ describe("SDK Package Registry", () => {
 describe("Package Registry Queries", () => {
   it("getPackagesByScope returns correct packages", () => {
     const sdkPkgs = getPackagesByScope("anthropic-sdk");
-    expect(sdkPkgs.length).toBeGreaterThanOrEqual(6); // 6 TS + Python
+    expect(sdkPkgs.length).toBeGreaterThanOrEqual(8); // 8 TS + 2 Python
     for (const pkg of sdkPkgs) {
       expect(pkg.scope).toBe("anthropic-sdk");
     }
