@@ -340,6 +340,104 @@ export interface AgentDefinition {
 
 export type AgentMcpServerSpec = string | Record<string, McpServerConfig>;
 
+// ─── 4c2. Agent Tool Input/Output (task spawning) ────────────────────────────
+
+/**
+ * AgentInput — the payload when Claude invokes the Agent tool to spawn a subagent.
+ * "Task" is still accepted as an alias for "Agent" tool name.
+ */
+export interface AgentInput {
+  /** Short 3-5 word description */
+  description: string;
+  /** The task for the agent to perform */
+  prompt: string;
+  /** Type of specialized agent (must match a key in `agents` config) */
+  subagent_type: string;
+  /** Model override */
+  model?: "sonnet" | "opus" | "haiku";
+  /** Resume a previous agent session by ID */
+  resume?: string;
+  /** Run in background (parent continues) */
+  run_in_background?: boolean;
+  /** Max agentic turns */
+  max_turns?: number;
+  /** Agent display name */
+  name?: string;
+  /** Team name for agent teams */
+  team_name?: string;
+  /** Permission mode for the subagent */
+  mode?: "acceptEdits" | "bypassPermissions" | "default" | "dontAsk" | "plan";
+  /** Run in an isolated git worktree */
+  isolation?: "worktree";
+}
+
+/**
+ * AgentOutput — discriminated union returned when the Agent tool completes.
+ */
+export type AgentOutput =
+  | {
+      status: "completed";
+      agentId: string;
+      content: Array<{ type: "text"; text: string }>;
+      totalToolUseCount: number;
+      totalDurationMs: number;
+      totalTokens: number;
+      usage: {
+        input_tokens: number;
+        output_tokens: number;
+        cache_creation_input_tokens: number | null;
+        cache_read_input_tokens: number | null;
+        server_tool_use: {
+          web_search_requests: number;
+          web_fetch_requests: number;
+        } | null;
+        service_tier: ("standard" | "priority" | "batch") | null;
+        cache_creation: {
+          ephemeral_1h_input_tokens: number;
+          ephemeral_5m_input_tokens: number;
+        } | null;
+      };
+      prompt: string;
+    }
+  | {
+      status: "async_launched";
+      agentId: string;
+      description: string;
+      prompt: string;
+      outputFile: string;
+      canReadOutputFile?: boolean;
+    }
+  | {
+      status: "sub_agent_entered";
+      description: string;
+      message: string;
+    };
+
+// ─── 4c3. Task management tools ──────────────────────────────────────────────
+
+/** TaskOutput tool — retrieve results from a background task. */
+export interface TaskOutputInput {
+  task_id: string;
+  /** If true, blocks until the task completes */
+  block: boolean;
+  /** Timeout in seconds */
+  timeout: number;
+}
+
+/** TaskStop tool — terminate a running task. */
+export interface TaskStopInput {
+  task_id?: string;
+  /** @deprecated Use task_id */
+  shell_id?: string;
+}
+
+export interface TaskStopOutput {
+  message: string;
+  task_id: string;
+  task_type: string;
+  command?: string;
+}
+
 // ─── 4d. SDKMessage — complete union ──────────────────────────────────────────
 
 /**
@@ -369,34 +467,58 @@ export type SDKMessage =
   | SDKPromptSuggestionMessage;
 
 /**
- * @task-relevant — Task notification from agent teams.
- * Emitted when task state changes in a shared task list.
+ * @task-relevant — Task notification (completion/failure/stop).
+ * Emitted when a background task or teammate finishes.
  */
 export interface SDKTaskNotificationMessage {
-  type: "task_notification";
+  type: "system";
+  subtype: "task_notification";
   task_id: string;
-  subject: string;
-  status: TaskStatus;
-  teammate_name?: string;
-  team_name?: string;
+  tool_use_id?: string;
+  status: "completed" | "failed" | "stopped";
+  output_file: string;
+  summary: string;
+  usage?: {
+    total_tokens: number;
+    tool_uses: number;
+    duration_ms: number;
+  };
+  uuid: string;
+  session_id: string;
 }
 
 /**
- * @task-relevant — Emitted when a background task starts.
+ * @task-relevant — Emitted when a background task is registered.
  */
 export interface SDKTaskStartedMessage {
-  type: "task_started";
+  type: "system";
+  subtype: "task_started";
   task_id: string;
-  subject: string;
+  tool_use_id?: string;
+  description: string;
+  task_type?: string;
+  uuid: string;
+  session_id: string;
 }
 
 /**
  * @task-relevant — Emitted periodically for running tasks.
+ * Enable `agentProgressSummaries: true` in options for AI-generated summaries.
  */
 export interface SDKTaskProgressMessage {
-  type: "task_progress";
+  type: "system";
+  subtype: "task_progress";
   task_id: string;
-  progress: string;
+  tool_use_id?: string;
+  description: string;
+  usage: {
+    total_tokens: number;
+    tool_uses: number;
+    duration_ms: number;
+  };
+  last_tool_name?: string;
+  uuid: string;
+  session_id: string;
 }
 
 export interface SDKAssistantMessage {
@@ -650,6 +772,22 @@ export interface SDKSessionInfo {
  * │  Anthropic SDK (0.78.0) ── NO tasks API ──                          │
  * │    └─ Message Batches API is the only async primitive                │
  * │    └─ Tool-use loop is the agentic execution pattern                │
+ * │                                                                      │
+ * │  AGENT SDK TASK LIFECYCLE:                                           │
+ * │  ─────────────────────────                                           │
+ * │  1. Caller invokes query() or session.send()                        │
+ * │  2. Claude invokes Agent tool → AgentInput                          │
+ * │  3. SDK emits SDKTaskStartedMessage (subtype: "task_started")       │
+ * │  4. Subagent runs; SDKTaskProgressMessage emitted periodically      │
+ * │     (usage: { total_tokens, tool_uses, duration_ms })               │
+ * │  5. On completion → SDKTaskNotificationMessage                      │
+ * │     (status: completed|failed|stopped, output_file, summary)        │
+ * │  6. Agent tool returns AgentOutput (discriminated on status)         │
+ * │  7. TaskCompleted hook fires for agent teams                        │
+ * │                                                                      │
+ * │  DOWNSTREAM CONSUMERS (claude-agent-sdk):                            │
+ * │    556 npm dependents · 918 GitHub "Used by" · 2.9M+ downloads      │
+ * │    Notable: Promptfoo, Zed editor, Vercel AI SDK provider           │
  * │                                                                      │
  * └──────────────────────────────────────────────────────────────────────┘
  */
