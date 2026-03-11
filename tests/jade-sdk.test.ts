@@ -75,7 +75,7 @@ describe("src/jade/agent-sdk/tokenizer", () => {
 
   it("estimateCostUsd uses correct per-model pricing", () => {
     // opus: $15/M input, $75/M output
-    const cost = estimateCostUsd(1_000_000, 1_000_000, "claude-opus-4-5");
+    const cost = estimateCostUsd(1_000_000, 1_000_000, "claude-opus-4-6");
     expect(cost).toBeCloseTo(90, 2);
   });
 
@@ -86,7 +86,7 @@ describe("src/jade/agent-sdk/tokenizer", () => {
   });
 
   it("estimateCostUsd returns 0 for 0 tokens", () => {
-    expect(estimateCostUsd(0, 0, "claude-opus-4-5")).toBe(0);
+    expect(estimateCostUsd(0, 0, "claude-opus-4-6")).toBe(0);
   });
 
   it("calculateRots divides value by cost", () => {
