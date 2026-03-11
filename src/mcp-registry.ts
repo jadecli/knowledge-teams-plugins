@@ -1,7 +1,7 @@
 /**
  * @module mcp-registry
  * @description Dynamic MCP registry with canonical enums, package pinning, and
- *              bridge mappings for knowledge-work-plugins and financial-work-plugins.
+ *              bridge mappings for knowledge-work-plugins and financial-services-plugins.
  *
  * @frontmatter
  * ---
@@ -40,8 +40,11 @@ export enum McpOrigin {
 
 export enum McpTransport {
   STDIO = "stdio",
+  /** @deprecated Use STREAMABLE_HTTP instead */
   SSE = "sse",
   HTTP = "http",
+  /** Recommended transport for remote MCP servers (replaces SSE) */
+  STREAMABLE_HTTP = "streamable-http",
   SDK = "sdk",
 }
 
@@ -158,7 +161,7 @@ export interface CanonicalPackage {
  * ---
  * dataSource: github.com/modelcontextprotocol/servers + npm registry
  * lastUpdated: "2026-03-11"
- * totalServers: 35
+ * totalServers: 47
  * ---
  */
 export const MCP_SERVERS: McpServerEntry[] = [
@@ -494,6 +497,117 @@ export const MCP_SERVERS: McpServerEntry[] = [
     domains: [WorkDomain.SHARED],
     builtIn: true,
   },
+
+  // ── Remote Connectors (Claude.ai Connectors Directory) ──────────────────
+
+  {
+    id: "mcp-asana",
+    name: "Asana",
+    description: "Asana project management — tasks, projects, workspaces",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.PRODUCTIVITY,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-monday",
+    name: "Monday.com",
+    description: "Monday.com work management — boards, items, automations",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.PRODUCTIVITY,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-clickup",
+    name: "ClickUp",
+    description: "ClickUp project management — tasks, docs, goals",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.PRODUCTIVITY,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-box",
+    name: "Box",
+    description: "Box content management — files, folders, collaboration",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.PRODUCTIVITY,
+    domains: [WorkDomain.KNOWLEDGE_WORK, WorkDomain.FINANCIAL_WORK],
+  },
+  {
+    id: "mcp-canva",
+    name: "Canva",
+    description: "Canva design platform — templates, assets, collaboration",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.DESIGN,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-miro",
+    name: "Miro",
+    description: "Miro collaborative whiteboard — boards, shapes, diagrams",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.DESIGN,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-vercel",
+    name: "Vercel",
+    description: "Vercel deployment platform — projects, deployments, domains",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.CLOUD,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-supabase",
+    name: "Supabase",
+    description: "Supabase backend — database, auth, storage, edge functions",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.DATABASE,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-hubspot",
+    name: "HubSpot",
+    description: "HubSpot CRM — contacts, deals, tickets, marketing",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.PRODUCTIVITY,
+    domains: [WorkDomain.KNOWLEDGE_WORK, WorkDomain.FINANCIAL_WORK],
+  },
+  {
+    id: "mcp-intercom",
+    name: "Intercom",
+    description: "Intercom customer messaging — conversations, contacts, articles",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.COMMUNICATION,
+    domains: [WorkDomain.KNOWLEDGE_WORK],
+  },
+  {
+    id: "mcp-zapier",
+    name: "Zapier",
+    description: "Zapier automation — triggers, actions, multi-app workflows",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.STREAMABLE_HTTP,
+    category: McpCategory.PRODUCTIVITY,
+    domains: [WorkDomain.SHARED],
+  },
+  {
+    id: "mcp-square",
+    name: "Square",
+    description: "Square payments and commerce — payments, catalog, orders",
+    origin: McpOrigin.OFFICIAL_INTEGRATION,
+    transport: McpTransport.SSE,
+    category: McpCategory.FINANCE,
+    domains: [WorkDomain.FINANCIAL_WORK],
+  },
 ];
 
 // ─── Anthropic Official npm Packages ─────────────────────────────────────────
@@ -646,7 +760,7 @@ export const KNOWLEDGE_WORK_RECOMMENDED_MCPS = [
  *
  * @frontmatter
  * ---
- * dataSource: "jadecli/financial-work-plugins (projected)"
+ * dataSource: "anthropics/financial-services-plugins"
  * lastUpdated: "2026-03-11"
  * ---
  */

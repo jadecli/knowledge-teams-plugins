@@ -1,0 +1,134 @@
+name: Architecture Guardrails
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
+jobs:
+  guardrails:
+    name: Claude Architecture Review
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Test
+        run: npx vitest run
+
+      - name: Architecture Guardrails (Claude)
+        uses: anthropics/claude-code-action@v1
+        with:
+          # OAuth token generated locally: `claude auth login` then copy to
+          # GitHub repo secret CLAUDE_CODE_OAUTH_TOKEN.
+          # Users: alex@jadecli.com / jade@jadecli.com ($200/mo Max plans)
+          # Rotate daily: `claude auth status` → copy token → gh secret set
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+          # direct_prompt exits non-zero on violations → blocks PR merge
+          direct_prompt: |
+            You are an architecture guardrail for jadecli/knowledge-teams-plugins.
+            Your job is to BLOCK this PR if it violates any architectural rules.
+
+            ## PR Context
+            Repository: ${{ github.repository }}
+            PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+            Base: ${{ github.event.pull_request.base.ref }}
+            Head: ${{ github.event.pull_request.head.ref }}
+
+            ## Step 1: Read project rules
+            Read CLAUDE.md for the project architecture and rules.
+
+            ## Step 2: Get the diff
+            Run: git diff ${{ github.event.pull_request.base.sha }}..${{ github.event.pull_request.head.sha }} --name-only
+            Then read the full diff for changed files.
+
+            ## Step 3: Check ALL of these architectural guardrails
+
+            ### BLOCKING violations (any one = PR must be rejected):
+
+            1. **SDK Misuse**: Any import of `@anthropic-ai/sdk` for agent orchestration.
+               Agent code MUST use `@anthropic-ai/claude-agent-sdk`. The REST SDK
+               (`@anthropic-ai/sdk`) is only allowed for direct API calls (completions,
+               embeddings), never for agent orchestration or tool execution.
+
+            2. **WebMCP Contract**: Every file in `webmcp/` that exports a tool MUST
+               export `{ name, description, inputSchema, handler }`. Missing any of
+               these four fields is a blocking violation.
+
+            3. **Unpinned Dependencies**: Any dependency in package.json using `latest`,
+               `*`, or `>=` version ranges. All deps must be pinned or use `^` at most.
+               `@anthropic-ai/*` and `@modelcontextprotocol/*` packages MUST be exact
+               pinned (no `^`).
+
+            4. **Secrets/Credentials**: Any hardcoded API keys, tokens, passwords, or
+               secrets in source files. Check for patterns like `sk-`, `xoxb-`, `ghp_`,
+               `AKIA`, base64-encoded credentials, or `Bearer <token>`.
+
+            5. **Type Safety**: Any use of `as any`, `@ts-ignore`, `@ts-nocheck`, or
+               `@ts-expect-error` without a justification comment.
+
+            6. **STO Frontmatter**: Any file in `s-team/` must have frontmatter with
+               ALL required fields: role, model, safety_research, fitness_function,
+               budget_tool_calls.
+
+            7. **Upstream Override**: Files in `compose/` must never modify upstream
+               KWP files directly. Jade extensions in `extensions/` always win over
+               upstream — if a PR modifies files that shadow upstream without being
+               in `extensions/`, that's a violation.
+
+            8. **Registry Consistency**: If `src/mcp-registry.ts` is modified, every
+               entry in MCP_SERVERS must have valid `id`, `name`, `origin`, `transport`,
+               `category`, and `domains` fields. ANTHROPIC_PACKAGES and MCP_PACKAGES
+               must have `installed: true` only for packages actually in package.json.
+
+            9. **Zod v4 API**: Use `err.issues` not `err.errors`. Use
+               `z.record(keySchema, valueSchema)` not `z.record(valueSchema)`.
+               Zod v4 breaking changes must be respected.
+
+            10. **Test Coverage**: If new exports are added to `src/` or `webmcp/`,
+                there must be corresponding test additions in `tests/`. New public
+                functions without tests are a blocking violation.
+
+            ## Step 4: Report
+
+            If ANY blocking violation is found:
+            - List each violation with file path, line number, and explanation
+            - End your response with the exact line:
+              GUARDRAIL_STATUS: FAIL
+
+            If NO violations are found:
+            - Briefly confirm what was checked
+            - End your response with the exact line:
+              GUARDRAIL_STATUS: PASS
+
+          claude_args: "--max-turns 10"
+          show_full_output: true
+
+      - name: Parse guardrail result
+        if: always()
+        shell: bash
+        run: |
+          # The claude-code-action output is in the PR comment.
+          # If the action itself failed (non-zero exit), the job already fails.
+          # This step provides a clear summary.
+          echo "Architecture guardrails check completed."
+          echo "If Claude found violations, the PR comment will detail them."
+          echo "This check must pass before merging."
