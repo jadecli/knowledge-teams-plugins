@@ -3,15 +3,15 @@
 > Generated: 2026-03-11T00:00:00Z
 > Source: `claude/research-claude-sdk-agents-oVAul`
 > Schema version: 1
-> Entities: 51 | Relationships: 50
+> Entities: 56 | Relationships: 56
 
 ## Layers
 
 | Layer | Entities | Inbound Rels | Outbound Rels |
 |-------|----------|--------------|---------------|
 | data | 6 | 9 | 1 |
-| type | 15 | 0 | 3 |
-| runtime | 12 | 3 | 11 |
+| type | 19 | 2 | 3 |
+| runtime | 13 | 3 | 13 |
 | agent-sdk | 7 | 3 | 0 |
 | infra | 7 | 0 | 10 |
 | external | 4 | 10 | 0 |
@@ -167,6 +167,34 @@
 - **Description**: Plugin metadata from plugin.json (name, version, description, skills, commands)
 - **Attributes**: 5 | **Functions**: 0
 
+### SecurityTestFrontmatter
+
+- **ID**: `type.SecurityTestFrontmatter`
+- **Source**: `lib/security-tdd.ts`
+- **Description**: Frontmatter per security test: OWASP category, CWE, Bayesian impact, attack vector
+- **Attributes**: 13 | **Functions**: 0
+
+### SecurityCoverageEntry
+
+- **ID**: `type.SecurityCoverageEntry`
+- **Source**: `lib/security-tdd.ts`
+- **Description**: Per-OWASP-category coverage metrics with Bayesian confidence level
+- **Attributes**: 6 | **Functions**: 0
+
+### OwaspCategory
+
+- **ID**: `type.OwaspCategory`
+- **Source**: `lib/security-tdd.ts`
+- **Description**: Enum: OWASP Top 10 2021 categories (A01-A10)
+- **Attributes**: 4 | **Functions**: 0
+
+### AttackVector
+
+- **ID**: `type.AttackVector`
+- **Source**: `lib/security-tdd.ts`
+- **Description**: Enum: attack vector classification including prompt-injection and supply-chain
+- **Attributes**: 4 | **Functions**: 0
+
 ## Runtime Layer
 
 ### Database Client
@@ -252,6 +280,13 @@
 - **Source**: `src/teams/skeptical-codegen-team.ts`
 - **Description**: Multi-agent code review team using @anthropic-ai/claude-agent-sdk with 3 specialist sub-agents
 - **Attributes**: 2 | **Functions**: 1
+
+### Security TDD Framework
+
+- **ID**: `runtime.security_tdd`
+- **Source**: `lib/security-tdd.ts`
+- **Description**: Parses security frontmatter, computes OWASP coverage matrix, Bayesian confidence scoring
+- **Attributes**: 3 | **Functions**: 0
 
 ## Agent-sdk Layer
 
@@ -439,3 +474,9 @@
 | `agent_sdk.query` | `agent_sdk.PermissionSystem` | uses | 1:1 | query() options.permissionMode + canUseTool configure access control |
 | `agent_sdk.HookSystem` | `agent_sdk.Session` | references | N:1 | Hook inputs include session_id, transcript_path from BaseHookInput |
 | `db.dim_sessions` | `agent_sdk.Session` | references | N:1 | dim_sessions.session_id maps to Agent SDK Session UUID |
+| `runtime.security_tdd` | `type.SecurityTestFrontmatter` | produces | 1:N | parseSecurityFrontmatter() extracts SecurityTestFrontmatter from JSDoc |
+| `runtime.security_tdd` | `type.SecurityCoverageEntry` | produces | 1:N | computeCoverageMatrix() groups frontmatter into per-OWASP coverage |
+| `type.SecurityTestFrontmatter` | `type.OwaspCategory` | references | N:1 | Each test maps to one OWASP Top 10 category |
+| `type.SecurityTestFrontmatter` | `type.AttackVector` | references | N:1 | Each test classifies one attack vector |
+| `type.SecurityCoverageEntry` | `type.OwaspCategory` | references | N:1 | Each coverage entry tracks one OWASP category |
+| `runtime.skeptical_team` | `runtime.security_tdd` | uses | 1:1 | security-auditor sub-agent enforces Security TDD frontmatter requirements |

@@ -797,6 +797,86 @@ export const KNOWLEDGE_TEAMS_ER: ERDiagram = {
         { name: "claude_code_oauth_token", type: AttributeType.STRING, required: true, description: "Daily-rotated OAuth token" },
       ],
     },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // SECURITY LAYER — Security TDD framework (lib/security-tdd.ts)
+    // ════════════════════════════════════════════════════════════════════════
+
+    {
+      id: "type.SecurityTestFrontmatter",
+      name: "SecurityTestFrontmatter",
+      layer: EntityLayer.TYPE,
+      sourceFile: "lib/security-tdd.ts",
+      description: "Frontmatter per security test: OWASP category, CWE, Bayesian impact, attack vector",
+      attributes: [
+        { name: "id", type: AttributeType.STRING, required: true, description: "Unique test ID (e.g., SEC-CRAWLER-001)" },
+        { name: "owasp", type: AttributeType.ENUM, required: true, description: "OWASP Top 10 2021 category" },
+        { name: "severity", type: AttributeType.ENUM, required: true, description: "CVSS-aligned: critical|high|medium|low|info" },
+        { name: "attackVector", type: AttributeType.ENUM, required: true, description: "network|adjacent|local|physical|prompt-injection|supply-chain" },
+        { name: "cwe", type: AttributeType.STRING, required: false, description: "CWE identifier (e.g., CWE-918)" },
+        { name: "targetFiles", type: AttributeType.ARRAY, required: true, description: "Source files under test" },
+        { name: "threatDescription", type: AttributeType.STRING, required: true, description: "What the attacker would try" },
+        { name: "testDescription", type: AttributeType.STRING, required: true, description: "What the test validates" },
+        { name: "priorProbability", type: AttributeType.ENUM, required: true, description: "P(attack attempt): high|medium|low" },
+        { name: "bayesianImpact", type: AttributeType.ENUM, required: true, description: "Expected reduction in P(success): high|medium|low" },
+        { name: "phase", type: AttributeType.ENUM, required: true, description: "Security TDD phase: red|green|secure|refactor" },
+        { name: "createdAt", type: AttributeType.STRING, required: true, description: "ISO date" },
+        { name: "author", type: AttributeType.STRING, required: true, description: "Agent or human author" },
+      ],
+    },
+    {
+      id: "type.SecurityCoverageEntry",
+      name: "SecurityCoverageEntry",
+      layer: EntityLayer.TYPE,
+      sourceFile: "lib/security-tdd.ts",
+      description: "Per-OWASP-category coverage metrics with Bayesian confidence level",
+      attributes: [
+        { name: "owasp", type: AttributeType.ENUM, required: true, description: "OWASP category" },
+        { name: "testCount", type: AttributeType.INTEGER, required: true, description: "Number of tests covering this category" },
+        { name: "testIds", type: AttributeType.ARRAY, required: true, description: "SEC-* IDs of covering tests" },
+        { name: "targetFiles", type: AttributeType.ARRAY, required: true, description: "All files tested under this category" },
+        { name: "highestSeverity", type: AttributeType.ENUM, required: true, description: "Most severe finding level" },
+        { name: "bayesianCoverage", type: AttributeType.ENUM, required: true, description: "strong|moderate|weak|none" },
+      ],
+    },
+    {
+      id: "type.OwaspCategory",
+      name: "OwaspCategory",
+      layer: EntityLayer.TYPE,
+      sourceFile: "lib/security-tdd.ts",
+      description: "Enum: OWASP Top 10 2021 categories (A01-A10)",
+      attributes: [
+        { name: "A01", type: AttributeType.STRING, required: true, description: "Broken Access Control" },
+        { name: "A02", type: AttributeType.STRING, required: true, description: "Cryptographic Failures" },
+        { name: "A03", type: AttributeType.STRING, required: true, description: "Injection" },
+        { name: "A10", type: AttributeType.STRING, required: true, description: "Server-Side Request Forgery" },
+      ],
+    },
+    {
+      id: "type.AttackVector",
+      name: "AttackVector",
+      layer: EntityLayer.TYPE,
+      sourceFile: "lib/security-tdd.ts",
+      description: "Enum: attack vector classification including prompt-injection and supply-chain",
+      attributes: [
+        { name: "NETWORK", type: AttributeType.STRING, required: true, description: "API/HTTP input" },
+        { name: "PROMPT_INJECTION", type: AttributeType.STRING, required: true, description: "LLM prompt manipulation" },
+        { name: "SUPPLY_CHAIN", type: AttributeType.STRING, required: true, description: "Upstream dependency compromise" },
+        { name: "LOCAL", type: AttributeType.STRING, required: true, description: "Env vars, filesystem" },
+      ],
+    },
+    {
+      id: "runtime.security_tdd",
+      name: "Security TDD Framework",
+      layer: EntityLayer.RUNTIME,
+      sourceFile: "lib/security-tdd.ts",
+      description: "Parses security frontmatter, computes OWASP coverage matrix, Bayesian confidence scoring",
+      attributes: [
+        { name: "parseSecurityFrontmatter", type: AttributeType.FUNCTION, required: true, description: "Extract SecurityTestFrontmatter from JSDoc" },
+        { name: "computeCoverageMatrix", type: AttributeType.FUNCTION, required: true, description: "Group tests by OWASP category" },
+        { name: "computeBayesianConfidence", type: AttributeType.FUNCTION, required: true, description: "0-100 confidence score from coverage matrix" },
+      ],
+    },
   ],
 
   relationships: [
@@ -1232,6 +1312,57 @@ export const KNOWLEDGE_TEAMS_ER: ERDiagram = {
       kind: RelationshipKind.REFERENCES,
       cardinality: Cardinality.MANY_TO_ONE,
       label: "dim_sessions.session_id maps to Agent SDK Session UUID",
+    },
+
+    // ── Security TDD Relationships ──────────────────────────────────────
+
+    {
+      id: "rel.security_tdd__frontmatter",
+      from: "runtime.security_tdd",
+      to: "type.SecurityTestFrontmatter",
+      kind: RelationshipKind.PRODUCES,
+      cardinality: Cardinality.ONE_TO_MANY,
+      label: "parseSecurityFrontmatter() extracts SecurityTestFrontmatter from JSDoc",
+    },
+    {
+      id: "rel.security_tdd__coverage",
+      from: "runtime.security_tdd",
+      to: "type.SecurityCoverageEntry",
+      kind: RelationshipKind.PRODUCES,
+      cardinality: Cardinality.ONE_TO_MANY,
+      label: "computeCoverageMatrix() groups frontmatter into per-OWASP coverage",
+    },
+    {
+      id: "rel.frontmatter__owasp",
+      from: "type.SecurityTestFrontmatter",
+      to: "type.OwaspCategory",
+      kind: RelationshipKind.REFERENCES,
+      cardinality: Cardinality.MANY_TO_ONE,
+      label: "Each test maps to one OWASP Top 10 category",
+    },
+    {
+      id: "rel.frontmatter__attack_vector",
+      from: "type.SecurityTestFrontmatter",
+      to: "type.AttackVector",
+      kind: RelationshipKind.REFERENCES,
+      cardinality: Cardinality.MANY_TO_ONE,
+      label: "Each test classifies one attack vector",
+    },
+    {
+      id: "rel.coverage__owasp",
+      from: "type.SecurityCoverageEntry",
+      to: "type.OwaspCategory",
+      kind: RelationshipKind.REFERENCES,
+      cardinality: Cardinality.MANY_TO_ONE,
+      label: "Each coverage entry tracks one OWASP category",
+    },
+    {
+      id: "rel.skeptical_team__security_tdd",
+      from: "runtime.skeptical_team",
+      to: "runtime.security_tdd",
+      kind: RelationshipKind.USES,
+      cardinality: Cardinality.ONE_TO_ONE,
+      label: "security-auditor sub-agent enforces Security TDD frontmatter requirements",
     },
   ],
 };

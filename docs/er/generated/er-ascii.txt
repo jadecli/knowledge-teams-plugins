@@ -309,6 +309,65 @@
 │  commands: array (nullable)                                  │
 └──────────────────────────────────────────────────────────────┘
 
+┌──────────────────────────────────────────────────────────────┐
+│ SecurityTestFrontmatter [type]                               │
+│ lib/security-tdd.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: string                                                  │
+│  owasp: enum                                                 │
+│  severity: enum                                              │
+│  attackVector: enum                                          │
+│  cwe: string (nullable)                                      │
+│  targetFiles: array                                          │
+│  threatDescription: string                                   │
+│  testDescription: string                                     │
+│  priorProbability: enum                                      │
+│  bayesianImpact: enum                                        │
+│  phase: enum                                                 │
+│  createdAt: string                                           │
+│  author: string                                              │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ SecurityCoverageEntry [type]                                 │
+│ lib/security-tdd.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  owasp: enum                                                 │
+│  testCount: integer                                          │
+│  testIds: array                                              │
+│  targetFiles: array                                          │
+│  highestSeverity: enum                                       │
+│  bayesianCoverage: enum                                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ OwaspCategory [type]                                         │
+│ lib/security-tdd.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  A01: string                                                 │
+│  A02: string                                                 │
+│  A03: string                                                 │
+│  A10: string                                                 │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ AttackVector [type]                                          │
+│ lib/security-tdd.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  NETWORK: string                                             │
+│  PROMPT_INJECTION: string                                    │
+│  SUPPLY_CHAIN: string                                        │
+│  LOCAL: string                                               │
+└──────────────────────────────────────────────────────────────┘
+
 ═══ RUNTIME LAYER ═══════════════════════════════════════════
 
 ┌──────────────────────────────────────────────────────────────┐
@@ -489,6 +548,17 @@
 │ FUNCTIONS                                                    │
 ├──────────────────────────────────────────────────────────────┤
 │  runSkepticalCodegenTeam(cwd?: string): Promise<void>        │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Security TDD Framework [runtime]                             │
+│ lib/security-tdd.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  parseSecurityFrontmatter: function                          │
+│  computeCoverageMatrix: function                             │
+│  computeBayesianConfidence: function                         │
 └──────────────────────────────────────────────────────────────┘
 
 ═══ AGENT-SDK LAYER ═════════════════════════════════════════
@@ -863,3 +933,21 @@
 
   db.dim_sessions ──[REFERENCES N:1]──▶ agent_sdk.Session
     dim_sessions.session_id maps to Agent SDK Session UUID
+
+  runtime.security_tdd ──[PRODUCES 1:N]──▶ type.SecurityTestFrontmatter
+    parseSecurityFrontmatter() extracts SecurityTestFrontmatter from JSDoc
+
+  runtime.security_tdd ──[PRODUCES 1:N]──▶ type.SecurityCoverageEntry
+    computeCoverageMatrix() groups frontmatter into per-OWASP coverage
+
+  type.SecurityTestFrontmatter ──[REFERENCES N:1]──▶ type.OwaspCategory
+    Each test maps to one OWASP Top 10 category
+
+  type.SecurityTestFrontmatter ──[REFERENCES N:1]──▶ type.AttackVector
+    Each test classifies one attack vector
+
+  type.SecurityCoverageEntry ──[REFERENCES N:1]──▶ type.OwaspCategory
+    Each coverage entry tracks one OWASP category
+
+  runtime.skeptical_team ──[USES 1:1]──▶ runtime.security_tdd
+    security-auditor sub-agent enforces Security TDD frontmatter requirements

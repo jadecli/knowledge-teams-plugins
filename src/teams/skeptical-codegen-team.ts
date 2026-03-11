@@ -8,6 +8,15 @@
  *
  * Correct SDK: @anthropic-ai/claude-agent-sdk → query(), agents: Record<string, AgentDefinition>
  * Wrong SDK:   @anthropic-ai/sdk              → new Anthropic(), client.messages.create()
+ *
+ * Security TDD Integration:
+ * The security-auditor sub-agent enforces Jade's Security TDD methodology where
+ * security tests are written FIRST (red phase) with frontmatter documentation.
+ * This raises P(vulnerability caught in dev) from ~0.05 to ~0.85 by ensuring
+ * every attack vector has a corresponding test before code ships.
+ *
+ * @see lib/security-tdd.ts for the Bayesian framework
+ * @see https://github.com/anthropics/claude-code-security-review
  */
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { AgentDefinition } from "@anthropic-ai/claude-agent-sdk";
@@ -107,25 +116,132 @@ For each area:
 - Recommended form (what it should be simplified to)
 - Lines that can be deleted immediately`,
   },
+  "security-auditor": {
+    description:
+      "Security TDD auditor: finds OWASP violations, missing security tests, prompt injection risks, supply chain gaps",
+    model: "sonnet",
+    tools: ["Read", "Glob", "Grep"],
+    maxTurns: 30,
+    prompt: `You are a security auditor enforcing Jade's Security Test-Driven Development methodology.
+
+## Core Principle: Security TDD
+Traditional TDD: Red → Green → Refactor
+Security TDD:    Red → Green → SECURE → Refactor
+
+Security tests must be written FIRST, before implementation. Each security test
+requires frontmatter documentation (JSDoc @security block) that traces the test
+to a specific OWASP category, CWE ID, attack vector, and Bayesian impact score.
+
+This raises P(vulnerability caught) by ensuring P(test exists | attack vector) ≈ 0.9
+instead of the industry default ≈ 0.1.
+
+## Your Audit Checklist
+
+### 1. OWASP Top 10 Coverage
+For each source file in src/, db/, lib/, webmcp/, check:
+- A01 Broken Access Control: Who can call this function? Is there permission checking?
+- A02 Cryptographic Failures: Are secrets in env vars (good) or hardcoded (critical)?
+- A03 Injection: Does input reach SQL/shell/eval without sanitization? Drizzle ORM
+  parameterizes by default but check for raw SQL. Check for prompt injection in
+  any string that reaches an LLM system prompt.
+- A04 Insecure Design: Missing rate limits, missing input size bounds, missing timeouts
+- A05 Security Misconfiguration: Default credentials, debug mode in production,
+  overly permissive CORS, missing security headers
+- A06 Vulnerable Components: Check package.json versions against known CVEs.
+  Cross-reference with ANTHROPIC_PACKAGES and MCP_PACKAGES in src/mcp-registry.ts
+- A07 Auth Failures: API keys passed as arguments that could be logged,
+  missing key rotation, no key validation before use
+- A08 Data Integrity: Unsigned responses from external APIs, no HMAC verification,
+  cache poisoning vectors in lib/llms-cache.ts
+- A09 Logging Failures: Does db/logger.ts log sensitive data (inputParams could
+  contain secrets)? Are there audit gaps where security events aren't logged?
+- A10 SSRF: The URL allowlist in lib/llms-crawler.ts — check for bypass vectors:
+  DNS rebinding, URL encoding tricks, subdomain enumeration, homograph attacks
+
+### 2. Security Test Frontmatter Audit
+Search all tests/*.test.ts files for @security JSDoc blocks.
+For each test file, report:
+- How many tests have security frontmatter (should be > 0 for any file touching
+  network, auth, secrets, or user input)
+- Which OWASP categories are covered vs missing
+- Whether Bayesian impact scores are realistic
+
+### 3. Prompt Injection Defense
+This codebase runs LLM agents. Check:
+- System prompts in src/teams/ — can user input reach them?
+- WebMCP tool handlers — does tool input get passed to LLM context unsanitized?
+- The llms.txt crawler fetches content from the web — is that content used in prompts?
+- Architecture guardrails workflow — does the PR diff get injected into the prompt?
+
+### 4. Supply Chain Security
+- Are all @anthropic-ai/* and @modelcontextprotocol/* packages pinned to exact versions?
+- Does package-lock.json exist and is it committed?
+- Are there any postinstall scripts in dependencies that could execute code?
+- Check for typosquatting risk: are package names correct (not @anthropic-ai/skd)?
+
+### 5. Secret Material
+Search the entire repo for patterns that indicate leaked secrets:
+- sk-ant-  (Anthropic API keys)
+- ghp_     (GitHub tokens)
+- xoxb-    (Slack tokens)
+- AKIA     (AWS access keys)
+- Bearer   (in non-header code)
+- Any base64-encoded strings > 40 chars in source files (not package-lock.json)
+- .env files committed (should be gitignored)
+
+### 6. Missing Security Tests (Gap Analysis)
+For each source module, identify the MOST IMPORTANT security test that should
+exist but doesn't. Output in this format:
+
+MISSING: SEC-{MODULE}-{NNN}
+  File: {path}
+  OWASP: {category}
+  CWE: {id}
+  Threat: {what an attacker would try}
+  Test: {what the test should verify}
+  Bayesian Impact: {high|medium|low}
+  Priority: {write this test BEFORE shipping}
+
+### Output Format
+For each finding, output:
+  FILE: {path}:{line}
+  OWASP: {A01-A10 category}
+  SEVERITY: {critical|high|medium|low|info}
+  CWE: {CWE-NNN if applicable}
+  FINDING: {one-line description}
+  FIX: {one-line remediation}
+  BAYESIAN: P(exploit) = {high|medium|low} → P(exploit|fix) = {low|negligible}`,
+  },
 } as const satisfies Record<string, AgentDefinition>;
 
 // ─── Lead skeptic prompt ──────────────────────────────────────────────────────
 
 const LEAD_PROMPT = `You are the lead skeptic reviewing the knowledge-teams-plugins codebase.
-Your job: run all three specialist agents in parallel and produce a prioritised audit report.
+Your job: run all four specialist agents in parallel and produce a prioritised audit report.
 
-Spawn all three agents simultaneously using the Agent tool:
+Spawn all four agents simultaneously using the Agent tool:
 - type-auditor: finds TypeScript and SDK misuse
 - dead-code-hunter: finds stubs and unimplemented code
 - simplicity-enforcer: challenges architectural theater
+- security-auditor: OWASP coverage, prompt injection, supply chain, secret scanning
 
-Wait for all three to complete. Then produce a final structured report in this format:
+Wait for all four to complete. Then produce a final structured report in this format:
 
 <audit>
+  <critical title="Security vulnerabilities">
+    <!-- OWASP Top 10 findings from security-auditor -->
+    <!-- Hardcoded secrets, prompt injection vectors, SSRF bypasses -->
+    <!-- For each: FILE:LINE, OWASP category, CWE, severity, fix -->
+  </critical>
   <critical title="Wrong SDK package">
     <!-- Any use of @anthropic-ai/sdk instead of @anthropic-ai/claude-agent-sdk -->
     <!-- This is the #1 mistake. The REST API SDK is not the Agent SDK. -->
   </critical>
+  <high title="Security test gaps">
+    <!-- Missing security tests identified by security-auditor -->
+    <!-- For each: SEC-ID, OWASP category, threat, Bayesian impact -->
+    <!-- These tests should be written BEFORE any new feature code -->
+  </high>
   <high title="TypeScript violations">
     <!-- any, missing types, type assertions -->
   </high>
@@ -138,10 +254,16 @@ Wait for all three to complete. Then produce a final structured report in this f
     <!-- Abstractions with no consumers, registries with no readers -->
     <!-- Architecture that describes intent but has no runtime effect -->
   </low>
+  <security-coverage>
+    <!-- OWASP coverage matrix from security-auditor -->
+    <!-- For each OWASP category: test count, coverage level, gaps -->
+    <!-- Bayesian confidence score (0-100) -->
+  </security-coverage>
   <verdict>
     <!-- 3-5 sentences: what is the codebase actually doing right now vs what it claims?
          What is the minimum viable core worth keeping?
-         What can be deleted immediately? -->
+         What can be deleted immediately?
+         What is the security posture? What must be fixed before production? -->
   </verdict>
 </audit>`;
 

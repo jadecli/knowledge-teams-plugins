@@ -207,6 +207,45 @@ erDiagram
     array commands
   }
 
+  type_SecurityTestFrontmatter {
+    string id
+    enum owasp
+    enum severity
+    enum attackVector
+    string cwe
+    array targetFiles
+    string threatDescription
+    string testDescription
+    enum priorProbability
+    enum bayesianImpact
+    enum phase
+    string createdAt
+    string author
+  }
+
+  type_SecurityCoverageEntry {
+    enum owasp
+    int testCount
+    array testIds
+    array targetFiles
+    enum highestSeverity
+    enum bayesianCoverage
+  }
+
+  type_OwaspCategory {
+    string A01
+    string A02
+    string A03
+    string A10
+  }
+
+  type_AttackVector {
+    string NETWORK
+    string PROMPT_INJECTION
+    string SUPPLY_CHAIN
+    string LOCAL
+  }
+
   %% ── RUNTIME LAYER ──
   runtime_db_client {
     object cachedDb
@@ -255,6 +294,12 @@ erDiagram
   runtime_skeptical_team {
     object agents
     string LEAD_PROMPT
+  }
+
+  runtime_security_tdd {
+    fn parseSecurityFrontmatter
+    fn computeCoverageMatrix
+    fn computeBayesianConfidence
   }
 
   %% ── AGENT-SDK LAYER ──
@@ -431,6 +476,12 @@ erDiagram
   agent_sdk_query ||--|| agent_sdk_PermissionSystem : "query() options.permissionMode + canUseTool configure access control"
   agent_sdk_HookSystem }o--|| agent_sdk_Session : "Hook inputs include session_id, transcript_path from BaseHookInput"
   db_dim_sessions }o--|| agent_sdk_Session : "dim_sessions.session_id maps to Agent SDK Session UUID"
+  runtime_security_tdd ||--o{ type_SecurityTestFrontmatter : "parseSecurityFrontmatter() extracts SecurityTestFrontmatter from JSDoc"
+  runtime_security_tdd ||--o{ type_SecurityCoverageEntry : "computeCoverageMatrix() groups frontmatter into per-OWASP coverage"
+  type_SecurityTestFrontmatter }o--|| type_OwaspCategory : "Each test maps to one OWASP Top 10 category"
+  type_SecurityTestFrontmatter }o--|| type_AttackVector : "Each test classifies one attack vector"
+  type_SecurityCoverageEntry }o--|| type_OwaspCategory : "Each coverage entry tracks one OWASP category"
+  runtime_skeptical_team ||--|| runtime_security_tdd : "security-auditor sub-agent enforces Security TDD frontmatter requirements"
 ```
 
 ## Data Layer
@@ -625,7 +676,7 @@ erDiagram
 
 ## Type Layer
 
-> 15 entities, 10 relationships
+> 19 entities, 15 relationships
 
 ### McpServerEntry
 
@@ -849,6 +900,69 @@ Plugin metadata from plugin.json (name, version, description, skills, commands)
 | skills | array | no |  |
 | commands | array | no |  |
 
+### SecurityTestFrontmatter
+
+`type.SecurityTestFrontmatter` — `lib/security-tdd.ts`
+
+Frontmatter per security test: OWASP category, CWE, Bayesian impact, attack vector
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| id | string | yes | Unique test ID (e.g., SEC-CRAWLER-001) |
+| owasp | enum | yes | OWASP Top 10 2021 category |
+| severity | enum | yes | CVSS-aligned: critical|high|medium|low|info |
+| attackVector | enum | yes | network|adjacent|local|physical|prompt-injection|supply-chain |
+| cwe | string | no | CWE identifier (e.g., CWE-918) |
+| targetFiles | array | yes | Source files under test |
+| threatDescription | string | yes | What the attacker would try |
+| testDescription | string | yes | What the test validates |
+| priorProbability | enum | yes | P(attack attempt): high|medium|low |
+| bayesianImpact | enum | yes | Expected reduction in P(success): high|medium|low |
+| phase | enum | yes | Security TDD phase: red|green|secure|refactor |
+| createdAt | string | yes | ISO date |
+| author | string | yes | Agent or human author |
+
+### SecurityCoverageEntry
+
+`type.SecurityCoverageEntry` — `lib/security-tdd.ts`
+
+Per-OWASP-category coverage metrics with Bayesian confidence level
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| owasp | enum | yes | OWASP category |
+| testCount | integer | yes | Number of tests covering this category |
+| testIds | array | yes | SEC-* IDs of covering tests |
+| targetFiles | array | yes | All files tested under this category |
+| highestSeverity | enum | yes | Most severe finding level |
+| bayesianCoverage | enum | yes | strong|moderate|weak|none |
+
+### OwaspCategory
+
+`type.OwaspCategory` — `lib/security-tdd.ts`
+
+Enum: OWASP Top 10 2021 categories (A01-A10)
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| A01 | string | yes | Broken Access Control |
+| A02 | string | yes | Cryptographic Failures |
+| A03 | string | yes | Injection |
+| A10 | string | yes | Server-Side Request Forgery |
+
+### AttackVector
+
+`type.AttackVector` — `lib/security-tdd.ts`
+
+Enum: attack vector classification including prompt-injection and supply-chain
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| NETWORK | string | yes | API/HTTP input |
+| PROMPT_INJECTION | string | yes | LLM prompt manipulation |
+| SUPPLY_CHAIN | string | yes | Upstream dependency compromise |
+| LOCAL | string | yes | Env vars, filesystem |
+
 #### Diagram
 
 ```mermaid
@@ -987,6 +1101,45 @@ erDiagram
     array commands
   }
 
+  type_SecurityTestFrontmatter {
+    string id
+    enum owasp
+    enum severity
+    enum attackVector
+    string cwe
+    array targetFiles
+    string threatDescription
+    string testDescription
+    enum priorProbability
+    enum bayesianImpact
+    enum phase
+    string createdAt
+    string author
+  }
+
+  type_SecurityCoverageEntry {
+    enum owasp
+    int testCount
+    array testIds
+    array targetFiles
+    enum highestSeverity
+    enum bayesianCoverage
+  }
+
+  type_OwaspCategory {
+    string A01
+    string A02
+    string A03
+    string A10
+  }
+
+  type_AttackVector {
+    string NETWORK
+    string PROMPT_INJECTION
+    string SUPPLY_CHAIN
+    string LOCAL
+  }
+
   %% ── RELATIONSHIPS ──
   type_McpServerEntry ||--o{ type_CanonicalPackage : "McpServerEntry.canonicalSdkPackages → CanonicalPackage[]"
   type_LanguageAnalyzer ||--o{ type_CanonicalPackage : "LanguageAnalyzer.knowledgeWorkerPackages → CanonicalPackage[]"
@@ -998,11 +1151,16 @@ erDiagram
   type_OrgUsageResponse ||--o{ type_OrgUsageBucket : "OrgUsageResponse.usage contains OrgUsageBucket[]"
   type_OrgUsageBucket ||--|| db_fact_org_usage : "Each OrgUsageBucket maps to one fact_org_usage row"
   type_LoadedPlugin ||--o| type_PluginManifest : "LoadedPlugin.manifest contains optional PluginManifest"
+  runtime_security_tdd ||--o{ type_SecurityTestFrontmatter : "parseSecurityFrontmatter() extracts SecurityTestFrontmatter from JSDoc"
+  runtime_security_tdd ||--o{ type_SecurityCoverageEntry : "computeCoverageMatrix() groups frontmatter into per-OWASP coverage"
+  type_SecurityTestFrontmatter }o--|| type_OwaspCategory : "Each test maps to one OWASP Top 10 category"
+  type_SecurityTestFrontmatter }o--|| type_AttackVector : "Each test classifies one attack vector"
+  type_SecurityCoverageEntry }o--|| type_OwaspCategory : "Each coverage entry tracks one OWASP category"
 ```
 
 ## Runtime Layer
 
-> 12 entities, 21 relationships
+> 13 entities, 24 relationships
 
 ### Database Client
 
@@ -1192,6 +1350,18 @@ Multi-agent code review team using @anthropic-ai/claude-agent-sdk with 3 special
 
 - `runSkepticalCodegenTeam(cwd?: string)`: `Promise<void>` — Run full team review via query() streaming
 
+### Security TDD Framework
+
+`runtime.security_tdd` — `lib/security-tdd.ts`
+
+Parses security frontmatter, computes OWASP coverage matrix, Bayesian confidence scoring
+
+| Attribute | Type | Required | Notes |
+|-----------|------|----------|-------|
+| parseSecurityFrontmatter | function | yes | Extract SecurityTestFrontmatter from JSDoc |
+| computeCoverageMatrix | function | yes | Group tests by OWASP category |
+| computeBayesianConfidence | function | yes | 0-100 confidence score from coverage matrix |
+
 #### Diagram
 
 ```mermaid
@@ -1247,6 +1417,12 @@ erDiagram
     string LEAD_PROMPT
   }
 
+  runtime_security_tdd {
+    fn parseSecurityFrontmatter
+    fn computeCoverageMatrix
+    fn computeBayesianConfidence
+  }
+
   %% ── RELATIONSHIPS ──
   runtime_db_logger ||--o{ db_fact_tool_calls : "logToolCall() inserts into fact_tool_calls"
   runtime_db_logger ||--o{ db_dim_tools : "ensureDimTool() upserts dim_tools"
@@ -1269,6 +1445,9 @@ erDiagram
   infra_architecture_guardrails ||--|| runtime_mcp_registry : "Guardrails reads mcp-registry.ts for canonical types and versions"
   infra_staff_review ||--|| runtime_mcp_registry : "Staff review checks package drift against ANTHROPIC_PACKAGES/MCP_PACKAGES"
   runtime_webmcp_registry ||--o{ db_dim_tools : "WebMCP tools classified in dim_tools with is_webmcp=true"
+  runtime_security_tdd ||--o{ type_SecurityTestFrontmatter : "parseSecurityFrontmatter() extracts SecurityTestFrontmatter from JSDoc"
+  runtime_security_tdd ||--o{ type_SecurityCoverageEntry : "computeCoverageMatrix() groups frontmatter into per-OWASP coverage"
+  runtime_skeptical_team ||--|| runtime_security_tdd : "security-auditor sub-agent enforces Security TDD frontmatter requirements"
 ```
 
 ## Agent-sdk Layer
