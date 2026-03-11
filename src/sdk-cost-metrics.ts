@@ -2,36 +2,74 @@
  * Canonical Cost & Time Metrics — Claude Agent SDK + Anthropic API
  *
  * Consolidates every cost/time data structure available across:
- *   1. @anthropic-ai/claude-agent-sdk (Agent SDK) — query()-level metrics
- *   2. @anthropic-ai/sdk (REST SDK) — per-message Usage from /v1/messages
- *   3. Anthropic Admin API — /v1/organizations/{usage_report,cost_report}
- *   4. Claude Code OTEL telemetry — claude_code.cost.usage, claude_code.token.usage
+ *   1. @anthropic-ai/claude-agent-sdk v0.2.72 (Agent SDK) — query()-level metrics
+ *   2. @anthropic-ai/sdk v0.78.0 (REST SDK) — per-message Usage from /v1/messages
+ *   3. Anthropic Admin API — /v1/organizations/{usage_report,cost_report,usage_report/claude_code}
+ *   4. Claude Code v2.1.72 OTEL telemetry — claude_code.cost.usage, claude_code.token.usage
+ *
+ * NOTE: Claude Code versioning is 2.1.x (NOT 2.7.x). Version "2.7.2" does not exist.
+ *       Latest as of 2026-03: Claude Code 2.1.72, @anthropic-ai/sdk 0.78.0,
+ *       @anthropic-ai/claude-agent-sdk 0.2.72
  *
  * Source docs (canonical):
  *   - https://platform.claude.com/docs/en/agent-sdk/cost-tracking
  *   - https://platform.claude.com/docs/en/agent-sdk/typescript
  *   - https://platform.claude.com/docs/en/api/usage-cost-api
+ *   - https://platform.claude.com/docs/en/build-with-claude/claude-code-analytics-api
  *   - https://code.claude.com/docs/en/costs
  */
 
-// ─── 1. Anthropic REST API Usage (from @anthropic-ai/sdk BetaMessage) ─────────
+// ─── SDK Version Constants ────────────────────────────────────────────────────
+
+export const SDK_VERSIONS = {
+  /** @anthropic-ai/sdk — REST API client */
+  REST_SDK: "0.78.0",
+  /** @anthropic-ai/claude-agent-sdk — Agent orchestration SDK */
+  AGENT_SDK: "0.2.72",
+  /** Claude Code CLI */
+  CLAUDE_CODE: "2.1.72",
+} as const;
+
+// ─── 1. Anthropic REST API Usage (from @anthropic-ai/sdk v0.78.0) ────────────
 
 /**
- * Token usage from a single /v1/messages response.
- * Canonical source: @anthropic-ai/sdk → BetaMessage.usage
+ * Full Usage type from a /v1/messages response.
+ * Canonical source: @anthropic-ai/sdk v0.78.0 → Message.usage
+ *
+ * Note: total input = input_tokens + cache_creation_input_tokens + cache_read_input_tokens
+ * (input_tokens alone is UNCACHED input only)
  */
 export interface AnthropicAPIUsage {
+  /** Uncached input tokens only (NOT total input) */
   input_tokens: number | null;
   output_tokens: number | null;
   cache_creation_input_tokens?: number | null;
   cache_read_input_tokens?: number | null;
+  /** Server-side tool usage (web search, web fetch) */
+  server_tool_use?: {
+    web_search_requests: number;
+    web_fetch_requests: number;
+  } | null;
+  /** Service tier used for the request */
+  service_tier?: ("standard" | "priority" | "batch") | null;
+  /** Granular cache creation breakdown by TTL */
+  cache_creation?: {
+    /** 1-hour TTL cache tokens */
+    ephemeral_1h_input_tokens: number;
+    /** 5-minute TTL cache tokens */
+    ephemeral_5m_input_tokens: number;
+  } | null;
 }
 
 /**
  * Non-nullable version used in SDKResultMessage.usage.
+ * Only includes the core token fields (not server_tool_use/service_tier/cache_creation).
  */
 export type NonNullableUsage = {
-  [K in keyof AnthropicAPIUsage]-?: NonNullable<AnthropicAPIUsage[K]>;
+  input_tokens: number;
+  output_tokens: number;
+  cache_creation_input_tokens: number;
+  cache_read_input_tokens: number;
 };
 
 // ─── 2. Agent SDK Result-Level Metrics ────────────────────────────────────────
@@ -90,6 +128,24 @@ export interface QueryResultMetrics {
 
   /** Session UUID */
   session_id: string;
+}
+
+// ─── 2b. Agent SDK — Subagent Output Metrics ─────────────────────────────────
+
+/**
+ * Cost/time fields from AgentOutput (returned when a subagent completes).
+ * Canonical source: @anthropic-ai/claude-agent-sdk → Agent tool result
+ */
+export interface SubagentOutputMetrics {
+  status: "completed";
+  agentId: string;
+  totalToolUseCount: number;
+  /** Subagent wall-clock duration (ms) */
+  totalDurationMs: number;
+  /** Total tokens consumed by the subagent */
+  totalTokens: number;
+  /** Full usage breakdown (same structure as REST API Usage) */
+  usage: AnthropicAPIUsage;
 }
 
 // ─── 3. Per-Step Usage (TypeScript SDK only) ──────────────────────────────────
@@ -193,6 +249,70 @@ export interface CostReportBucket {
 
 export interface CostReportResponse {
   data: CostReportBucket[];
+  has_more: boolean;
+  next_page?: string;
+}
+
+// ─── 4b. Claude Code Analytics API (per-user daily metrics) ───────────────────
+
+/**
+ * Query params for GET /v1/organizations/usage_report/claude_code
+ * Returns per-user daily aggregated metrics for Claude Code usage.
+ * Requires Admin API key. Data freshness: ~1 hour.
+ */
+export interface ClaudeCodeAnalyticsParams {
+  starting_at: string;    // ISO 8601
+  ending_at: string;      // ISO 8601
+  limit?: number;
+  page?: string;
+}
+
+/**
+ * Per-user daily metric record from the Claude Code Analytics API.
+ */
+export interface ClaudeCodeAnalyticsRecord {
+  date: string;
+  /** User attribution */
+  actor: {
+    user_actor?: { email_address: string };
+    api_actor?: { api_key_name: string };
+  };
+  terminal_type: string;
+  customer_type: string;
+  organization_id: string;
+  /** Core productivity metrics */
+  core_metrics: {
+    num_sessions: number;
+    lines_of_code: { added: number; removed: number };
+    commits_by_claude_code: number;
+    pull_requests_by_claude_code: number;
+  };
+  /** Tool action acceptance/rejection rates */
+  tool_actions: {
+    edit_tool: { accepted: number; rejected: number };
+    write_tool: { accepted: number; rejected: number };
+    notebook_edit_tool: { accepted: number; rejected: number };
+    multi_edit_tool: { accepted: number; rejected: number };
+  };
+  /** Per-model token + cost breakdown */
+  model_breakdown: Array<{
+    model: string;
+    tokens: {
+      input: number;
+      output: number;
+      cache_read: number;
+      cache_creation: number;
+    };
+    estimated_cost: {
+      /** Cost in cents (USD) */
+      amount: number;
+      currency: "USD";
+    };
+  }>;
+}
+
+export interface ClaudeCodeAnalyticsResponse {
+  data: ClaudeCodeAnalyticsRecord[];
   has_more: boolean;
   next_page?: string;
 }
