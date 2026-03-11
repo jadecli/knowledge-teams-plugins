@@ -2,7 +2,7 @@
 
 S-team compose layer that extends jadecli/knowledge-work-plugins (upstream fork of anthropics/knowledge-work-plugins) with jade-specific skills, WebMCP tools, and agent orchestration.
 
-**Jade Cofounder v3** — AI cofounder powered by a 13-seat S-Team council of
+**Jade Cofounder v3** — AI cofounder powered by a 14-seat S-Team council of
 specialised VP agents, a jade-loop task execution engine, and tweakcc-based
 system prompt customisation.
 
@@ -16,7 +16,7 @@ system prompt customisation.
 - `src/jade/` — TypeScript SDK: auth resolution, tokenizer, agent spawning, tweakcc patches
 - `docs/architecture/` — Design documents and conversation log
 
-## 13 VP Plugins
+## 14 VP Plugins
 
 | Plugin | Seat | Domain |
 |--------|------|--------|
@@ -33,6 +33,7 @@ system prompt customisation.
 | `jade-vp-search` | CSO₂ | Cross-tool search, knowledge aggregation |
 | `jade-vp-research` | CRO₂ | Deep research, literature review |
 | `jade-vp-productivity` | CPO₂ | Daily workflow, task management |
+| `jade-vp-admin` | CIO | Claude Code settings, usage analytics, cost controls, security policies |
 
 ## tweakcc Integration
 

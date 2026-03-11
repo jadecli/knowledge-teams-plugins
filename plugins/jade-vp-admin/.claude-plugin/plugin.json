@@ -1,0 +1,6 @@
+{
+  "name": "jade-vp-admin",
+  "description": "CIO seat — IT administration, Claude Code settings management, usage analytics, cost controls, billing oversight, security policies, and enterprise configuration for Claude teams and organizations.",
+  "author": { "name": "jadecli", "email": "jade@jadecli.com" },
+  "version": "1.0.0"
+}
