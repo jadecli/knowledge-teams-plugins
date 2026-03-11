@@ -18,8 +18,6 @@ jobs:
         with:
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
@@ -38,4 +36,5 @@ jobs:
             Read CLAUDE.md for project conventions.
           track_progress: true
           display_report: true
-          max_turns: "5"
+          claude_args: "--max-turns 5"
+          show_full_output: true

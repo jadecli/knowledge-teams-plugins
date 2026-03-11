@@ -15,8 +15,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: anthropics/claude-code-action@v1
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
@@ -32,5 +30,4 @@ jobs:
             6. Post a brief triage comment with category, complexity, and relevant files
 
             Do NOT attempt to fix the issue. Triage only.
-          max_turns: "3"
-          allowed_tools: "Read,Glob,Grep"
+          claude_args: "--max-turns 3"

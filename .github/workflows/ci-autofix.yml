@@ -25,8 +25,6 @@ jobs:
           ref: ${{ github.event.workflow_run.head_branch }}
           fetch-depth: 0
       - uses: anthropics/claude-code-action@v1
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           use_commit_signing: true
@@ -41,5 +39,4 @@ jobs:
 
             Only fix what's broken. Don't refactor or improve unrelated code.
             Commit the fix with message "fix: auto-fix CI failure".
-          max_turns: "5"
-          allowed_tools: "Bash,Edit,Write,Read,Glob,Grep"
+          claude_args: "--max-turns 5"

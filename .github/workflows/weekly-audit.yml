@@ -34,5 +34,5 @@ jobs:
             Title the issue: "weekly-audit: YYYY-MM-DD findings"
             Label it: maintenance
             Only create the issue if findings exist. Skip if everything is clean.
-          max_turns: "5"
-          allowed_tools: "Read,Glob,Grep,Bash"
+          claude_args: "--max-turns 5"
+          show_full_output: true
