@@ -15,9 +15,12 @@ Covers security hardening, access controls, compliance configuration, and audit 
 
 ### SSO/SAML Configuration (Enterprise)
 
-- SAML 2.0 and OIDC support
-- Domain capture — auto-route users to org SSO
+- SAML 2.0 and OIDC support (via WorkOS backend)
+- Supported IdPs: Okta, Azure AD (Entra), Google Workspace, Ping Identity, custom SAML 2.0
+- Domain capture — auto-route users with matching email domains to org SSO
 - JIT provisioning — create accounts on first SSO login
+- SCIM 2.0 — automated provisioning/deprovisioning from IdP (requires 70+ users)
+- Advanced Group Mappings — IdP groups prefixed `anthropic-` auto-assign roles
 - Managed via: `https://claude.ai/admin-settings/authentication`
 
 ### Auth Modes for Claude Code

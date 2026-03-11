@@ -73,12 +73,37 @@ OTEL_RESOURCE_ATTRIBUTES="department=engineering,team.id=platform,cost_center=en
 
 ## Anthropic Admin API Endpoints
 
-### Organization Usage
+Authentication requires an **Admin API key** (prefix `sk-ant-admin...`), provisioned through the Console.
+
+### Organization & Workspace Management
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/organizations/me` | Get current org info |
+| `GET` | `/v1/organizations/users` | List members |
+| `POST` | `/v1/organizations/invites` | Create invite |
+| `GET` | `/v1/organizations/workspaces` | List workspaces |
+| `POST` | `/v1/organizations/workspaces` | Create workspace |
+| `GET` | `/v1/organizations/api_keys` | List API keys |
+
+### Usage & Cost Reports
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/v1/organizations/usage_report/messages` | Token counts, requests |
+| `GET` | `/v1/organizations/cost_report` | Cost report (filterable by workspace) |
+| `GET` | `/v1/organizations/usage_report/claude_code` | Claude Code analytics |
+
+### Example Calls
 
 ```bash
 # Get organization usage summary
 curl -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
-  "https://api.anthropic.com/v1/organizations/{org_id}/usage?start_date=2026-03-01&end_date=2026-03-11"
+  "https://api.anthropic.com/v1/organizations/usage_report/messages?start_date=2026-03-01&end_date=2026-03-11"
+
+# Get cost report filtered by workspace
+curl -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
+  "https://api.anthropic.com/v1/organizations/cost_report?workspace_id=ws-..."
 
 # List workspace members
 curl -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
@@ -96,6 +121,25 @@ curl -H "x-api-key: $ANTHROPIC_ADMIN_KEY" \
 curl -H "x-api-key: $ANTHROPIC_API_KEY" \
   "https://api.anthropic.com/v1/rate_limits"
 ```
+
+## npm Packages & Third-Party Tools
+
+### Official Anthropic Packages
+
+| Package | Purpose |
+|---------|---------|
+| `@anthropic-ai/claude-code` | Claude Code CLI |
+| `@anthropic-ai/claude-agent-sdk` | SDK for building agents with Claude Code capabilities |
+| `@anthropic-ai/sdk` | Core TypeScript/JavaScript SDK for the Claude API |
+
+### Community Monitoring Tools
+
+| Tool | Purpose |
+|------|---------|
+| `claude_telemetry` (GitHub: TechNickAI) | OpenTelemetry wrapper; logs tool calls, tokens, costs to Logfire/Sentry/Honeycomb/Datadog |
+| `claude-code-otel` (GitHub: ColeMurray) | Comprehensive observability for Claude Code usage, performance, costs |
+| Grafana Cloud integration | Official Anthropic integration pulling from Usage and Cost API |
+| Datadog Cloud Cost Management | Official Anthropic integration with FOCUS mapping by workspace/API key |
 
 ## Recommended Observability Stack
 
