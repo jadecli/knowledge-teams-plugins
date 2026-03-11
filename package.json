@@ -11,12 +11,16 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
     "tweakcc": "^4.0.11",
-    "zod": "^3.23.0"
+    "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^25.3.5",
-    "typescript": "^5.5.0",
-    "vitest": "^2.1.0"
+    "@types/node": "^25.4.0",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  },
+  "exports": {
+    ".": "./dist/src/jade/kw/index.js",
+    "./kw": "./dist/src/jade/kw/index.js"
   },
   "license": "MIT"
 }

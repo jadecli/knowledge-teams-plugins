@@ -17,7 +17,7 @@ export function validateInput<T>(schema: ZodType<T>, input: unknown): Validation
     if (err instanceof ZodError) {
       return {
         success: false,
-        errors: err.errors.map((e) => `${e.path.join(".")}: ${e.message}`),
+        errors: err.issues.map((e) => `${e.path.join(".")}: ${e.message}`),
       };
     }
     return { success: false, errors: ["Unknown validation error"] };
