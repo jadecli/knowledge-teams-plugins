@@ -1,0 +1,775 @@
+╔════════════════════════════════════════════════════════════════╗
+║ knowledge-teams-plugins Entity Relationship Diagram            ║
+║ Generated: 2026-03-11T00:00:00Z                                ║
+║ Source: claude/research-claude-sdk-agents-oVAul                ║
+╚════════════════════════════════════════════════════════════════╝
+
+═══ DATA LAYER ══════════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────┐
+│ dim_tools [data]                                             │
+│ db/schema.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: integer (PK)                                            │
+│  tool_name: text                                             │
+│  category: text (nullable)                                   │
+│  origin: text (nullable)                                     │
+│  is_webmcp: boolean (default=false)                          │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ dim_agents [data]                                            │
+│ db/schema.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: integer (PK)                                            │
+│  agent_name: text                                            │
+│  sdk_version: text (nullable)                                │
+│  model: text (nullable)                                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ dim_sessions [data]                                          │
+│ db/schema.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: integer (PK)                                            │
+│  session_id: text                                            │
+│  branch_name: text (nullable)                                │
+│  pr_number: integer (nullable)                               │
+│  repo: text (nullable)                                       │
+│  started_at: timestamp (nullable, default=now())             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ fact_tool_calls [data]                                       │
+│ db/schema.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: integer (PK)                                            │
+│  session_id: integer (FK→db.dim_sessions, nullable)          │
+│  tool_id: integer (FK→db.dim_tools, nullable)                │
+│  agent_id: integer (FK→db.dim_agents, nullable)              │
+│  tool_name: text                                             │
+│  input_params: jsonb (nullable)                              │
+│  output_summary: text (nullable)                             │
+│  duration_ms: integer (nullable)                             │
+│  success: boolean                                            │
+│  error: text (nullable)                                      │
+│  input_tokens: integer (nullable)                            │
+│  output_tokens: integer (nullable)                           │
+│  branch_name: text (nullable)                                │
+│  pr_number: integer (nullable)                               │
+│  created_at: timestamp (nullable, default=now())             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ fact_org_usage [data]                                        │
+│ db/schema.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: integer (PK)                                            │
+│  org_id: text                                                │
+│  period_start: timestamp                                     │
+│  period_end: timestamp                                       │
+│  input_tokens: bigint (nullable)                             │
+│  output_tokens: bigint (nullable)                            │
+│  cache_read_tokens: bigint (nullable)                        │
+│  cache_creation_tokens: bigint (nullable)                    │
+│  model: text (nullable)                                      │
+│  fetched_at: timestamp (nullable, default=now())             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ meta_doc_cache [data]                                        │
+│ db/schema.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: integer (PK)                                            │
+│  url: text                                                   │
+│  content_hash: text                                          │
+│  content: text                                               │
+│  last_crawled: timestamp (nullable, default=now())           │
+│  parent_url: text (nullable)                                 │
+└──────────────────────────────────────────────────────────────┘
+
+═══ TYPE LAYER ══════════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────┐
+│ McpServerEntry [type]                                        │
+│ src/mcp-registry.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  id: string                                                  │
+│  name: string                                                │
+│  description: string                                         │
+│  origin: enum                                                │
+│  transport: enum                                             │
+│  category: enum                                              │
+│  npmPackage: string (nullable)                               │
+│  pinnedVersion: string (nullable)                            │
+│  repo: string (nullable)                                     │
+│  domains: array                                              │
+│  builtIn: boolean (nullable)                                 │
+│  implLanguage: enum (nullable)                               │
+│  canonicalSdkPackages: array (nullable)                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ CanonicalPackage [type]                                      │
+│ src/mcp-registry.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  name: string                                                │
+│  version: string                                             │
+│  registry: enum                                              │
+│  language: enum                                              │
+│  installed: boolean                                          │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ LanguageAnalyzer [type]                                      │
+│ src/language-analyzers.ts                                    │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  language: enum                                              │
+│  displayName: string                                         │
+│  fileExtensions: array                                       │
+│  agentSdkSupport: enum                                       │
+│  anthropicSdkAvailable: boolean                              │
+│  mcpSdkAvailable: boolean                                    │
+│  knowledgeWorkerPackages: array                              │
+│  treeSitterSupport: boolean                                  │
+│  recommendedMcps: array                                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ WebMCPToolDefinition [type]                                  │
+│ webmcp/shared/register.ts                                    │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  name: string                                                │
+│  description: string                                         │
+│  inputSchema: object                                         │
+│  handler: function                                           │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ ToolCallEvent [type]                                         │
+│ db/logger.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  toolName: string                                            │
+│  sessionId: string (nullable)                                │
+│  inputParams: object (nullable)                              │
+│  outputSummary: string (nullable)                            │
+│  durationMs: integer (nullable)                              │
+│  success: boolean                                            │
+│  error: string (nullable)                                    │
+│  inputTokens: integer (nullable)                             │
+│  outputTokens: integer (nullable)                            │
+│  branchName: string (nullable)                               │
+│  prNumber: integer (nullable)                                │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ TelemetryEvent [type]                                        │
+│ webmcp/shared/telemetry.ts                                   │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  toolName: string                                            │
+│  timestamp: integer                                          │
+│  durationMs: integer                                         │
+│  success: boolean                                            │
+│  error: string (nullable)                                    │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ TelemetryOptions [type]                                      │
+│ webmcp/shared/telemetry.ts                                   │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  persistToNeon: boolean (nullable)                           │
+│  sessionId: string (nullable)                                │
+│  branchName: string (nullable)                               │
+│  prNumber: integer (nullable)                                │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ CachedDoc [type]                                             │
+│ lib/llms-cache.ts                                            │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  url: string                                                 │
+│  content: string                                             │
+│  contentHash: string                                         │
+│  lastCrawled: object                                         │
+│  parentUrl: string (nullable)                                │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ CrawlResult [type]                                           │
+│ lib/llms-crawler.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  url: string                                                 │
+│  contentHash: string                                         │
+│  content: string                                             │
+│  changed: boolean                                            │
+│  childUrls: array                                            │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ SyncReport [type]                                            │
+│ lib/llms-sync.ts                                             │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  updated: array                                              │
+│  unchanged: array                                            │
+│  errors: array                                               │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ OrgUsageResponse [type]                                      │
+│ db/org-usage.ts                                              │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  org_id: string                                              │
+│  period_start: string                                        │
+│  period_end: string                                          │
+│  usage: array                                                │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ OrgUsageBucket [type]                                        │
+│ db/org-usage.ts                                              │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  model: string                                               │
+│  input_tokens: integer                                       │
+│  output_tokens: integer                                      │
+│  cache_read_input_tokens: integer (nullable)                 │
+│  cache_creation_input_tokens: integer (nullable)             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ UpstreamRef [type]                                           │
+│ compose/loader.ts                                            │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  repo: string                                                │
+│  commit: string                                              │
+│  syncedAt: string                                            │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ LoadedPlugin [type]                                          │
+│ compose/loader.ts                                            │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  source: enum                                                │
+│  name: string                                                │
+│  basePath: string                                            │
+│  manifest: object (nullable)                                 │
+│  skills: array                                               │
+│  commands: array                                             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ PluginManifest [type]                                        │
+│ compose/loader.ts                                            │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  name: string                                                │
+│  version: string (nullable)                                  │
+│  description: string (nullable)                              │
+│  skills: array (nullable)                                    │
+│  commands: array (nullable)                                  │
+└──────────────────────────────────────────────────────────────┘
+
+═══ RUNTIME LAYER ═══════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────┐
+│ Database Client [runtime]                                    │
+│ db/client.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  cachedDb: object (nullable)                                 │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  getDb(): NeonHttpDatabase<typeof schema>                    │
+│  hasDatabase(): boolean                                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Tool Call Logger [runtime]                                   │
+│ db/logger.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  ensureDimTool(toolName, category?, origin?, isWebmcp?): Prom│
+│  ensureDimSession(sessionId, branchName?, prNumber?, repo?): │
+│  logToolCall(event: ToolCallEvent): Promise<void>            │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Org Usage Fetcher [runtime]                                  │
+│ db/org-usage.ts                                              │
+├──────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  fetchOrgUsage(orgId, apiKey): Promise<OrgUsageResponse>     │
+│  persistOrgUsage(usage: OrgUsageResponse): Promise<number>   │
+│  syncOrgUsage(): Promise<{fetched, persisted}>               │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Two-Tier Doc Cache [runtime]                                 │
+│ lib/llms-cache.ts                                            │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  lru: object                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  getDoc(url): CachedDoc | undefined                          │
+│  getDocWithFallback(url): Promise<CachedDoc | undefined>     │
+│  putDoc(doc: CachedDoc): Promise<void>                       │
+│  refreshIfStale(url, maxAgeMs): Promise<CachedDoc | undefined│
+│  clearLruCache(): void                                       │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ llms.txt Crawler [runtime]                                   │
+│ lib/llms-crawler.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  ALLOWED_DOMAINS: array                                      │
+│  ENTRY_URLS: array                                           │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  isAllowedUrl(url): boolean                                  │
+│  getEntryUrls(): readonly string[]                           │
+│  fetchLlmsTxt(url): Promise<string>                          │
+│  hashContent(content): string                                │
+│  extractUrls(llmsTxt): string[]                              │
+│  crawlUrl(url, knownHash): Promise<CrawlResult>              │
+│  crawlRecursive(entryUrl, knownHashes, maxDepth?): Promise<Cr│
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ llms.txt Sync Orchestrator [runtime]                         │
+│ lib/llms-sync.ts                                             │
+├──────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  syncDocs(): Promise<SyncReport>                             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ MCP Registry [runtime]                                       │
+│ src/mcp-registry.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  MCP_SERVERS: array                                          │
+│  ANTHROPIC_PACKAGES: array                                   │
+│  MCP_PACKAGES: array                                         │
+│  MCP_SDKS_BY_LANGUAGE: object                                │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  getMcpsByDomain(domain: WorkDomain): McpServerEntry[]       │
+│  getMcpsByCategory(category: McpCategory): McpServerEntry[]  │
+│  getMcpsByOrigin(origin: McpOrigin): McpServerEntry[]        │
+│  getSdkPackagesForLanguage(lang: SupportedLanguage): Canonica│
+│  getInstalledPackages(): CanonicalPackage[]                  │
+│  getMonitoredPackages(): Array<{name, current, registry}>    │
+│  getMcpById(id: string): McpServerEntry | undefined          │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Language Analyzer Registry [runtime]                         │
+│ src/language-analyzers.ts                                    │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  LANGUAGE_ANALYZERS: array                                   │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  getAnalyzerForExtension(ext: string): LanguageAnalyzer | und│
+│  getNativeAgentSdkLanguages(): LanguageAnalyzer[]            │
+│  getMcpSdkLanguages(): LanguageAnalyzer[]                    │
+│  getKnowledgeWorkerStack(lang: SupportedLanguage): {packages,│
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ WebMCP Tool Registry [runtime]                               │
+│ webmcp/shared/register.ts                                    │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  registry: object                                            │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  registerTool(tool: WebMCPToolDefinition<T>): void           │
+│  getTool(name: string): WebMCPToolDefinition | undefined     │
+│  listTools(): string[]                                       │
+│  clearRegistry(): void                                       │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Telemetry Recorder [runtime]                                 │
+│ webmcp/shared/telemetry.ts                                   │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  events: array                                               │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  recordInvocation(event, options?): void                     │
+│  getEvents(): readonly TelemetryEvent[]                      │
+│  clearTelemetry(): void                                      │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Plugin Compose Loader [runtime]                              │
+│ compose/loader.ts                                            │
+├──────────────────────────────────────────────────────────────┤
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  loadUpstreamRef(rootDir: string): UpstreamRef               │
+│  scanPluginDir(dir, source): LoadedPlugin[]                  │
+│  loadAll(rootDir: string): {upstreamRef, upstream, jade}     │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Skeptical Codegen Team [runtime]                             │
+│ src/teams/skeptical-codegen-team.ts                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  agents: object                                              │
+│  LEAD_PROMPT: string                                         │
+├──────────────────────────────────────────────────────────────┤
+│ FUNCTIONS                                                    │
+├──────────────────────────────────────────────────────────────┤
+│  runSkepticalCodegenTeam(cwd?: string): Promise<void>        │
+└──────────────────────────────────────────────────────────────┘
+
+═══ AGENT-SDK LAYER ═════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────┐
+│ query() [agent-sdk]                                          │
+│ @anthropic-ai/claude-agent-sdk                               │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  prompt: string                                              │
+│  options.model: string                                       │
+│  options.cwd: string (nullable)                              │
+│  options.agents: object (nullable)                           │
+│  options.tools: array (nullable)                             │
+│  options.allowedTools: array (nullable)                      │
+│  options.permissionMode: string (nullable)                   │
+│  options.maxTurns: integer (nullable)                        │
+│  options.systemPrompt: object (nullable)                     │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ AgentDefinition [agent-sdk]                                  │
+│ @anthropic-ai/claude-agent-sdk                               │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  description: string                                         │
+│  model: string                                               │
+│  tools: array                                                │
+│  maxTurns: integer                                           │
+│  prompt: string                                              │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Agent Message Types [agent-sdk]                              │
+│ @anthropic-ai/claude-agent-sdk                               │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  assistant: object                                           │
+│  result.success: object                                      │
+│  result.error: object                                        │
+└──────────────────────────────────────────────────────────────┘
+
+═══ INFRA LAYER ═════════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────┐
+│ CI Workflow [infra]                                          │
+│ .github/workflows/ci.yml                                     │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  trigger: string                                             │
+│  neonBranch: string (nullable)                               │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Neon Branch Cleanup [infra]                                  │
+│ .github/workflows/neon-cleanup.yml                           │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  trigger: string                                             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Architecture Guardrails [infra]                              │
+│ .github/workflows/architecture-guardrails.yml                │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  trigger: string                                             │
+│  verdict: enum                                               │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Staff Review [infra]                                         │
+│ .github/workflows/staff-review.yml                           │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  trigger: string                                             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ CI Auto-Fix [infra]                                          │
+│ .github/workflows/ci-autofix.yml                             │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  trigger: string                                             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Issue Triage [infra]                                         │
+│ .github/workflows/issue-triage.yml                           │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  trigger: string                                             │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Weekly Audit [infra]                                         │
+│ .github/workflows/weekly-audit.yml                           │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  trigger: string                                             │
+└──────────────────────────────────────────────────────────────┘
+
+═══ EXTERNAL LAYER ══════════════════════════════════════════
+
+┌──────────────────────────────────────────────────────────────┐
+│ Neon Postgres [external]                                     │
+│ db/client.ts                                                 │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  DATABASE_URL: string                                        │
+│  NEON_API_KEY: string                                        │
+│  NEON_PROJECT_ID: string                                     │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Claude Organizations API [external]                          │
+│ db/org-usage.ts                                              │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  ANTHROPIC_ORG_API_KEY: string                               │
+│  ANTHROPIC_ORG_ID: string                                    │
+│  anthropic-version: string                                   │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Anthropic Documentation [external]                           │
+│ lib/llms-crawler.ts                                          │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  entryUrls: array                                            │
+└──────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────┐
+│ Claude Code GitHub Action [external]                         │
+│ .github/workflows/architecture-guardrails.yml                │
+├──────────────────────────────────────────────────────────────┤
+│ ATTRIBUTES                                                   │
+├──────────────────────────────────────────────────────────────┤
+│  claude_code_oauth_token: string                             │
+└──────────────────────────────────────────────────────────────┘
+
+═══ RELATIONSHIPS ════════════════════════════════════════════
+
+  db.fact_tool_calls ──[REFERENCES N:1]──▶ db.dim_sessions
+    fact_tool_calls.session_id → dim_sessions.id
+
+  db.fact_tool_calls ──[REFERENCES N:1]──▶ db.dim_tools
+    fact_tool_calls.tool_id → dim_tools.id
+
+  db.fact_tool_calls ──[REFERENCES N:1]──▶ db.dim_agents
+    fact_tool_calls.agent_id → dim_agents.id
+
+  runtime.db_logger ──[PRODUCES 1:N]──▶ db.fact_tool_calls
+    logToolCall() inserts into fact_tool_calls
+
+  runtime.db_logger ──[PRODUCES 1:N]──▶ db.dim_tools
+    ensureDimTool() upserts dim_tools
+
+  runtime.db_logger ──[PRODUCES 1:N]──▶ db.dim_sessions
+    ensureDimSession() upserts dim_sessions
+
+  runtime.org_usage ──[PRODUCES 1:N]──▶ db.fact_org_usage
+    persistOrgUsage() inserts into fact_org_usage
+
+  runtime.llms_cache ──[PRODUCES 1:N]──▶ db.meta_doc_cache
+    putDoc() upserts meta_doc_cache
+
+  runtime.db_logger ──[USES N:1]──▶ runtime.db_client
+    Logger calls getDb() for Drizzle instance
+
+  runtime.org_usage ──[USES N:1]──▶ runtime.db_client
+    Org usage calls getDb() for Drizzle instance
+
+  runtime.llms_cache ──[USES N:1]──▶ runtime.db_client
+    Cache reads/writes via getDb()
+
+  runtime.llms_sync ──[USES 1:1]──▶ runtime.llms_crawler
+    Sync orchestrator invokes crawler
+
+  runtime.llms_sync ──[USES 1:1]──▶ runtime.llms_cache
+    Sync orchestrator updates cache
+
+  runtime.telemetry ──[USES N:1]──▶ runtime.db_logger
+    recordInvocation() optionally calls logToolCall()
+
+  runtime.language_analyzers ──[USES N:1]──▶ runtime.mcp_registry
+    Imports SupportedLanguage, CanonicalPackage, MCP_SDKS_BY_LANGUAGE, getMcpsByDomain
+
+  runtime.skeptical_team ──[USES 1:1]──▶ agent_sdk.query
+    runSkepticalCodegenTeam() calls query() with agents config
+
+  runtime.skeptical_team ──[COMPOSES 1:N]──▶ agent_sdk.AgentDefinition
+    Defines 3 sub-agents: type-auditor, dead-code-hunter, simplicity-enforcer
+
+  agent_sdk.query ──[AGGREGATES 1:N]──▶ agent_sdk.AgentDefinition
+    query() options.agents receives AgentDefinition records
+
+  agent_sdk.query ──[PRODUCES 1:N]──▶ agent_sdk.message_types
+    query() async iterator yields message types
+
+  type.McpServerEntry ──[AGGREGATES 1:N]──▶ type.CanonicalPackage
+    McpServerEntry.canonicalSdkPackages → CanonicalPackage[]
+
+  type.LanguageAnalyzer ──[AGGREGATES 1:N]──▶ type.CanonicalPackage
+    LanguageAnalyzer.knowledgeWorkerPackages → CanonicalPackage[]
+
+  type.LanguageAnalyzer ──[REFERENCES N:N]──▶ type.McpServerEntry
+    LanguageAnalyzer.recommendedMcps references McpServerEntry.id
+
+  type.ToolCallEvent ──[PRODUCES 1:1]──▶ db.fact_tool_calls
+    ToolCallEvent maps to one fact_tool_calls row
+
+  type.TelemetryEvent ──[PRODUCES 1:1]──▶ type.ToolCallEvent
+    TelemetryEvent is converted to ToolCallEvent for Neon persistence
+
+  type.CrawlResult ──[PRODUCES 1:1]──▶ type.CachedDoc
+    CrawlResult is transformed into CachedDoc for storage
+
+  type.CachedDoc ──[PRODUCES 1:1]──▶ db.meta_doc_cache
+    CachedDoc maps to one meta_doc_cache row
+
+  type.OrgUsageResponse ──[COMPOSES 1:N]──▶ type.OrgUsageBucket
+    OrgUsageResponse.usage contains OrgUsageBucket[]
+
+  type.OrgUsageBucket ──[PRODUCES 1:1]──▶ db.fact_org_usage
+    Each OrgUsageBucket maps to one fact_org_usage row
+
+  type.LoadedPlugin ──[COMPOSES 0..1]──▶ type.PluginManifest
+    LoadedPlugin.manifest contains optional PluginManifest
+
+  runtime.db_client ──[USES N:1]──▶ external.neon_postgres
+    Drizzle ORM connects via DATABASE_URL
+
+  runtime.org_usage ──[CONSUMES N:1]──▶ external.claude_organizations_api
+    fetchOrgUsage() calls Anthropic Organizations API
+
+  runtime.llms_crawler ──[CONSUMES N:1]──▶ external.anthropic_docs
+    Crawler fetches from docs.anthropic.com allowlist
+
+  infra.ci ──[USES 1:1]──▶ external.neon_postgres
+    CI creates ephemeral Neon branch pr-{number}
+
+  infra.neon_cleanup ──[USES 1:1]──▶ external.neon_postgres
+    Cleanup deletes ephemeral Neon branch on PR close
+
+  infra.architecture_guardrails ──[USES 1:1]──▶ external.claude_code_action
+    Guardrails uses claude-code-action@v1 for review
+
+  infra.staff_review ──[USES 1:1]──▶ external.claude_code_action
+    Staff review uses claude-code-action@v1
+
+  infra.ci_autofix ──[USES 1:1]──▶ external.claude_code_action
+    Auto-fix uses claude-code-action@v1 to diagnose + fix
+
+  infra.issue_triage ──[USES 1:1]──▶ external.claude_code_action
+    Issue triage uses claude-code-action@v1
+
+  infra.weekly_audit ──[USES 1:1]──▶ external.claude_code_action
+    Weekly audit uses claude-code-action@v1
+
+  infra.weekly_audit ──[USES 1:1]──▶ runtime.llms_sync
+    Weekly audit runs npm run llms:sync
+
+  infra.architecture_guardrails ──[CONSUMES 1:1]──▶ runtime.mcp_registry
+    Guardrails reads mcp-registry.ts for canonical types and versions
+
+  infra.staff_review ──[CONSUMES 1:1]──▶ runtime.mcp_registry
+    Staff review checks package drift against ANTHROPIC_PACKAGES/MCP_PACKAGES
+
+  runtime.webmcp_registry ──[REFERENCES 1:N]──▶ db.dim_tools
+    WebMCP tools classified in dim_tools with is_webmcp=true
