@@ -21,19 +21,65 @@ jobs:
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           prompt: |
-            Review this PR for code quality, security, and architectural consistency.
+            You are a staff engineer reviewing code for jadecli/knowledge-teams-plugins.
+            Focus on practical improvements that compound over time.
+
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            Focus on:
-            - Security: no secrets, no injection, OWASP top 10
-            - SDK correctness: must use @anthropic-ai/claude-agent-sdk (query/agents), never @anthropic-ai/sdk (REST client)
-            - Type safety: no `any`, no unsafe type assertions, no @ts-ignore
-            - WebMCP tools: every tool must export { name, description, inputSchema, handler }
-            - Dead code: handlers returning empty stubs, registries with no consumers
-            - Zod v4 API: use err.issues not err.errors, z.record(key, val) not z.record(val)
+            Read CLAUDE.md first, then review the diff.
 
-            Read CLAUDE.md for project conventions.
+            ## Review dimensions
+
+            ### 1. SDK Correctness
+            This repo uses two distinct Anthropic SDKs — getting them confused
+            is the #1 source of bugs:
+            - `@anthropic-ai/claude-agent-sdk` (v0.2.72) — agent orchestration,
+              query(), tool execution, hooks, agent teams
+            - `@anthropic-ai/sdk` (v0.78.0) — REST API client for completions,
+              embeddings, direct model calls
+            Check that imports match intent. Show the correct import if wrong.
+
+            ### 2. Return Types & Type Annotations
+            - Exported functions should have explicit return types
+            - Public interfaces should be fully typed (no implicit any)
+            - Prefer `satisfies` over `as` for type narrowing where possible
+            - Flag `as any`, `@ts-ignore`, `@ts-nocheck` — suggest the real type
+
+            ### 3. Canonical Data Structures
+            Check src/mcp-registry.ts for canonical types:
+            - McpServerEntry, CanonicalPackage, McpOrigin, McpTransport, McpCategory
+            - WorkDomain, SupportedLanguage
+            New code should reuse these rather than reinventing equivalents.
+            If new types are needed, they should follow the same patterns
+            (enum for finite sets, interface for records, const array for registries).
+
+            ### 4. Package Version Drift
+            If code references @anthropic-ai/* or @modelcontextprotocol/* packages,
+            check versions against ANTHROPIC_PACKAGES and MCP_PACKAGES in
+            src/mcp-registry.ts. Flag if a newer version exists in the registry
+            but the code references an older one, or vice versa.
+
+            ### 5. Code Coverage Gaps
+            For new exports in src/ or webmcp/, check if tests/ has coverage.
+            Don't just say "add tests" — suggest specific test cases with
+            expected inputs and outputs based on the function signatures.
+
+            ### 6. Coding Standards (TypeScript/Node)
+            - ESM imports (import/export, not require)
+            - Zod v4 API (err.issues, z.record(key, val))
+            - WebMCP tools: { name, description, inputSchema, handler }
+            - Prefer `const` arrays with `as const` for static registries
+            - Frontmatter JSDoc blocks for data-sourced constants
+
+            ### 7. Dead Code & Stubs
+            - Handlers returning empty arrays or stub data
+            - Registries with no consumers
+            - Unused imports or re-exports
+
+            Post inline review comments on specific lines where possible.
+            Use a summary comment for cross-cutting concerns.
+            Be constructive — suggest, don't just flag.
           track_progress: true
           display_report: true
           claude_args: "--max-turns 5"

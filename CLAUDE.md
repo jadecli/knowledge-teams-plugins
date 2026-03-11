@@ -47,27 +47,31 @@ Alternatively, use `claude auth login` if `setup-token` is unavailable.
 | Workflow | Trigger | Purpose |
 |---|---|---|
 | `ci.yml` | push/PR to main | Build + test |
-| `architecture-guardrails.yml` | PR (required check) | **Blocks PR** if architectural violations found |
-| `staff-review.yml` | PR | Soft code review (non-blocking) |
+| `architecture-guardrails.yml` | PR (required check) | Architecture decision framework — recommends compounding refactors |
+| `staff-review.yml` | PR | SDK-aware code quality review (return types, coverage, naming, drift) |
 | `ci-autofix.yml` | CI failure | Auto-fix build/test failures |
 | `issue-triage.yml` | New issue | Auto-categorize and label |
 | `weekly-audit.yml` | Monday 9am UTC | Stale code / drift audit |
 
-### Architecture Guardrails (blocking)
+### Architecture Decision Framework
 
-The `architecture-guardrails.yml` workflow is a **required status check**.
-PRs cannot merge until all 10 guardrails pass:
+The guardrails use a **decision framework**, not a rigid checklist. Claude acts
+as a senior architect who recommends refactors that compound over time — dogfooding
+the same patterns we'd recommend to knowledge-work-plugins consumers.
 
-1. SDK misuse (agent-sdk vs REST sdk)
-2. WebMCP contract (name, description, inputSchema, handler)
-3. Unpinned dependencies (@anthropic-ai/*, @modelcontextprotocol/* must be exact)
-4. Secrets/credentials in source
-5. Type safety (no unguarded `as any`, `@ts-ignore`)
-6. STO frontmatter completeness
-7. Upstream override protection
-8. Registry consistency
-9. Zod v4 API compliance
-10. Test coverage for new exports
+**Review dimensions** (both workflows):
+- SDK correctness — right SDK for the job (agent-sdk vs REST sdk)
+- Return types & type annotations on public exports
+- Canonical naming — reuse McpServerEntry, CanonicalPackage, WorkDomain, etc.
+- Package version drift vs ANTHROPIC_PACKAGES / MCP_PACKAGES
+- Test coverage gaps — suggest concrete test cases, not just "add tests"
+- Zod v4 API patterns, WebMCP contract, coding standards
 
-To make this a required check in GitHub: Settings → Branches → Branch protection
+**Verdicts** (architecture-guardrails):
+- **PASS** — ship it
+- **PASS with follow-ups** — ship, file issues for recommendations
+- **REVISIT** — significant drift, worth a revision before compounding debt
+- **BLOCK** — hardcoded secrets only (the one hard rule)
+
+To make this a required check: Settings → Branches → Branch protection
 rule for `main` → Require status checks → Add "Claude Architecture Review".
