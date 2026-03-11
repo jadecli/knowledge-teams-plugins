@@ -1,0 +1,14 @@
+# Thin caller — delegates to jadecli/jadebot's reusable workflow.
+name: Security Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  scan:
+    uses: jadecli/jadebot/.github/workflows/security-review.yml@main
+    permissions:
+      contents: read
+      pull-requests: write
+      id-token: write
