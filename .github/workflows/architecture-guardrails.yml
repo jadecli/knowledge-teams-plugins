@@ -128,5 +128,41 @@ jobs:
               before merging to avoid compounding tech debt
             - **BLOCK** — Security issue (hardcoded secrets only)
 
+            ## Step 5: Draft Linear Tickets (for PASS with follow-ups or REVISIT)
+
+            If your verdict is PASS with follow-ups or REVISIT, generate a
+            `<linear-ticket-drafts>` XML block in your PR comment. Each recommendation
+            that should be tracked becomes a `<ticket>`. This is machine-readable so
+            Jade or Alex can approve tickets into the Linear sprint queue.
+
+            Read the PR description's `<pr-context>` XML for conventions and
+            ticket schema. Follow this exact format:
+
+            ```xml
+            <linear-ticket-drafts>
+              <ticket>
+                <title>Add explicit return type to getDb()</title>
+                <description>db/client.ts:14 — getDb() return type is inferred.
+                Adding an explicit NeonHttpDatabase return type prevents drift
+                if drizzle-orm changes its internal types.</description>
+                <type>refactor</type>
+                <priority>medium</priority>
+                <assignee>unassigned</assignee>
+                <labels>type-safety, sdk-correctness</labels>
+                <estimated-subtasks>
+                  <subtask version="0.1.0">Add return type annotation</subtask>
+                  <subtask version="0.2.0">Verify downstream consumers compile</subtask>
+                </estimated-subtasks>
+                <affected-files>
+                  <file>db/client.ts</file>
+                </affected-files>
+                <scope-note>Deferred to keep this PR focused on schema</scope-note>
+              </ticket>
+            </linear-ticket-drafts>
+            ```
+
+            For PASS verdicts, skip this section entirely. For BLOCK, skip this
+            and focus on the security fix that must happen before merge.
+
           claude_args: "--max-turns 10"
           show_full_output: true
