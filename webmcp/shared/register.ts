@@ -4,7 +4,7 @@ export interface WebMCPToolDefinition<T = unknown> {
   name: string;
   description: string;
   // Allow schemas where input may differ from output (e.g. z.default())
-  inputSchema: z.ZodType<T, z.ZodTypeDef, unknown>;
+  inputSchema: z.ZodType<T>;
   handler: (input: T) => Promise<unknown>;
 }
 

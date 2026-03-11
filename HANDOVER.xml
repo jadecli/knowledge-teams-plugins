@@ -1,0 +1,356 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<handover>
+  <meta>
+    <date>2026-03-11</date>
+    <branch>claude/fix-repo-kw-mapping-AJVVL</branch>
+    <repo>jadecli/knowledge-teams-plugins</repo>
+    <session>https://claude.ai/code/session_01VkAEJrtMHqLLSDFwpQGSZz</session>
+  </meta>
+
+  <summary>
+    Replaced phantom repo-to-KW mapping (11 non-existent repos from JADE0009 strategic plan)
+    with VP-seat-based detection module. Upgraded all packages to latest. Fixed zod v3→v4
+    breaking changes. Added vitest.config.ts for dist/ exclusion (vitest v4 auto-discovers
+    compiled JS tests otherwise).
+  </summary>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 1: FILES CHANGED IN THIS COMMIT                               -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+  <changes>
+    <new-files>
+      <file path="src/jade/kw/types.ts" lines="55">
+        <purpose>Type definitions for KW seat system</purpose>
+        <exports>EffortLevel, KWSeat, STOFrontmatter, KWDetectionResult, KWSeatsConfig</exports>
+        <review-notes>
+          Pure types, no runtime code. KWDetectionResult.mapped boolean distinguishes
+          explicit routing from fallback defaults — critical for ROTS bucketing.
+        </review-notes>
+      </file>
+
+      <file path="src/jade/kw/seats.json" lines="32">
+        <purpose>Canonical seat definitions + repo-to-KW mapping (single source of truth)</purpose>
+        <review-notes>
+          13 VP seats (KW-01 through KW-13). Only 5 real repos mapped today.
+          Unmapped repos get KW-00/sonnet/medium defaults. This file grows as new repos
+          are created — no upfront phantom scaffolding. The sto field links to s-team/*.md
+          filenames; null means no STO (CEO, CMO, CSO2, CRO2 currently).
+        </review-notes>
+        <seat-map>
+          <seat kwId="KW-01" plugin="jade-cofounder" title="CEO" sto="null" />
+          <seat kwId="KW-02" plugin="jade-vp-engineering" title="CTO" sto="cto" />
+          <seat kwId="KW-03" plugin="jade-vp-security" title="CSO" sto="cso" />
+          <seat kwId="KW-04" plugin="jade-vp-product" title="CPO" sto="cpo" />
+          <seat kwId="KW-05" plugin="jade-vp-sales" title="CRO" sto="cro" />
+          <seat kwId="KW-06" plugin="jade-vp-marketing" title="CMO" sto="null" />
+          <seat kwId="KW-07" plugin="jade-vp-finance" title="CFO" sto="cfo" />
+          <seat kwId="KW-08" plugin="jade-vp-data" title="CDO" sto="cdo" />
+          <seat kwId="KW-09" plugin="jade-vp-support" title="CCO" sto="cco" />
+          <seat kwId="KW-10" plugin="jade-vp-legal" title="CLO" sto="gc" />
+          <seat kwId="KW-11" plugin="jade-vp-search" title="CSO2" sto="null" />
+          <seat kwId="KW-12" plugin="jade-vp-research" title="CRO2" sto="null" />
+          <seat kwId="KW-13" plugin="jade-vp-productivity" title="CPO2" sto="coo" />
+        </seat-map>
+        <repo-map>
+          <mapping repo="jadecli/knowledge-teams-plugins" kw="KW-02" rationale="Core infra" />
+          <mapping repo="jadecli/jade-cofounder" kw="KW-01" rationale="CEO product" />
+          <mapping repo="jadecli/.github" kw="KW-02" rationale="Org CI/CD" />
+          <mapping repo="jadecli-labs/dotfiles-claude" kw="KW-13" rationale="Productivity tooling" />
+          <mapping repo="jadecli-labs/llms-txt-feed" kw="KW-12" rationale="Research" />
+        </repo-map>
+      </file>
+
+      <file path="src/jade/kw/detect.ts" lines="234">
+        <purpose>Core KW detection logic — the main deliverable</purpose>
+        <exports>
+          loadSeatsConfig, resetConfigCache, parseStoFrontmatter, deriveEffort,
+          detectKW, detectKWFromCwd, extractRepoSlug, getAllSeats, getSeatByKwId
+        </exports>
+        <review-notes>
+          - detectKW(repoSlug) is the primary API: repo slug → full KWDetectionResult
+          - detectKWFromCwd() shells out to git for auto-detection
+          - parseStoFrontmatter() uses regex on s-team/*.md YAML frontmatter
+          - Module-level cache for seats.json (resetConfigCache for tests)
+          - import.meta.dirname with __dirname fallback for path resolution
+          - All functions accept optional path overrides for testability
+        </review-notes>
+      </file>
+
+      <file path="src/jade/kw/index.ts" lines="19">
+        <purpose>Barrel exports for the kw module</purpose>
+      </file>
+
+      <file path="tests/kw-detect.test.ts" lines="183">
+        <purpose>22 tests covering all KW detection functions</purpose>
+        <test-suites>
+          <suite name="detectKW" tests="6">
+            Mapped repos (knowledge-teams-plugins→KW-02, jade-cofounder→KW-01,
+            dotfiles-claude→KW-13, llms-txt-feed→KW-12), unmapped repos→KW-00, empty string
+          </suite>
+          <suite name="getAllSeats" tests="2">13 seats, sequential KW-01 to KW-13</suite>
+          <suite name="getSeatByKwId" tests="2">KW-01 lookup, KW-99 undefined</suite>
+          <suite name="deriveEffort" tests="4">opus→high, sonnet→medium, haiku→low, unknown→medium</suite>
+          <suite name="parseStoFrontmatter" tests="3">cto.md, cfo.md, nonexistent→null</suite>
+          <suite name="extractRepoSlug" tests="5">SSH ±.git, HTTPS ±.git, invalid→null</suite>
+        </test-suites>
+      </file>
+
+      <file path="vitest.config.ts" lines="7">
+        <purpose>Exclude dist/ from vitest test discovery</purpose>
+        <review-notes>
+          Required after vitest v2→v4 upgrade. Vitest v4 auto-discovers .test.js
+          in dist/ which causes failures (compiled tests resolve __dirname to dist/).
+        </review-notes>
+      </file>
+    </new-files>
+
+    <modified-files>
+      <file path="package.json">
+        <change type="add">exports field: "." and "./kw" pointing to dist/src/jade/kw/index.js</change>
+        <change type="upgrade">zod ^3.23.0 → ^4.3.6 (MAJOR — breaking changes fixed below)</change>
+        <change type="upgrade">vitest ^2.1.0 → ^4.0.18 (MAJOR — needed vitest.config.ts)</change>
+        <change type="upgrade">@types/node ^25.3.5 → ^25.4.0</change>
+        <change type="upgrade">typescript ^5.5.0 → ^5.9.3</change>
+      </file>
+
+      <file path="webmcp/shared/register.ts">
+        <change type="fix">
+          Zod v4 removed ZodTypeDef. Changed inputSchema type from
+          z.ZodType&lt;T, z.ZodTypeDef, unknown&gt; to z.ZodType&lt;T&gt;
+        </change>
+      </file>
+
+      <file path="webmcp/shared/validate.ts">
+        <change type="fix">
+          Zod v4 renamed .errors to .issues. Changed err.errors.map to
+          err.issues.map and removed explicit type annotation (PropertyKey[] ≠ (string|number)[])
+        </change>
+      </file>
+
+      <file path="webmcp/external/tools/invoke-tool.ts">
+        <change type="fix">
+          Zod v4 z.record() requires 2 args. Changed z.record(z.unknown())
+          to z.record(z.string(), z.unknown())
+        </change>
+      </file>
+    </modified-files>
+  </changes>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 2: UPSTREAM SYNC STRATEGY                                      -->
+  <!-- The biggest challenge: keeping up with knowledge-work-plugins + Claude -->
+  <!-- Code updates daily                                                     -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+  <upstream-sync>
+    <current-pin>
+      <ref>upstream-ref.json</ref>
+      <repo>jadecli/knowledge-work-plugins</repo>
+      <commit>477c893b</commit>
+      <synced-at>2026-03-06</synced-at>
+      <days-stale>5</days-stale>
+    </current-pin>
+
+    <sync-surfaces description="What breaks when upstream changes">
+      <surface name="knowledge-work-plugins" frequency="weekly" risk="high">
+        <what-changes>
+          Plugin schemas (plugin.json shape), skill/command markdown format,
+          new upstream plugins added, existing plugin skills renamed/moved.
+        </what-changes>
+        <what-breaks>
+          compose/loader.ts scans upstream plugins directory. compose/resolver.ts
+          merges by name — a renamed upstream plugin becomes a new plugin instead
+          of an override. New upstream plugin.json fields are silently dropped.
+        </what-breaks>
+        <detection>
+          Compare upstream commit hash against upstream-ref.json. Diff plugin
+          directory listings. Schema-validate plugin.json against known shape.
+        </detection>
+        <mitigation>
+          Pin via upstream-ref.json commit hash. Sync script should: fetch upstream,
+          diff plugin list, run compose, run tests. Fail loudly on new/renamed plugins.
+        </mitigation>
+      </surface>
+
+      <surface name="claude-code-runtime" frequency="daily" risk="medium">
+        <what-changes>
+          Claude Code plugin loading behavior, hook execution model (stop-hook.sh),
+          .claude-plugin directory conventions, available MCP tool schemas.
+        </what-changes>
+        <what-breaks>
+          jade-loop stop-hook relies on exit code 0/1 semantics. tweakcc patches
+          depend on Claude Code installation detection. Agent spawning in pro-max
+          mode delegates to Claude Code session which may change its API.
+        </what-breaks>
+        <detection>
+          tweakcc.tryDetectInstallation() returns null on breaking changes.
+          Stop-hook failures surface as jade-loop infinite loops or premature exits.
+        </detection>
+        <mitigation>
+          tweakcc is pinned at ^4.0.11 (latest). Monitor tweakcc releases.
+          jade-loop stop-hook should log its exit reason to .claude/jade-loop.local.md.
+        </mitigation>
+      </surface>
+
+      <surface name="anthropic-sdk" frequency="biweekly" risk="medium">
+        <what-changes>
+          New model IDs, API parameter changes, SDK method signatures,
+          new features (extended thinking, tool use changes).
+        </what-changes>
+        <what-breaks>
+          src/jade/auth/resolve.ts DEFAULT_MODELS hardcodes model IDs.
+          src/jade/kw/detect.ts deriveEffort() pattern-matches on "opus"/"sonnet"/"haiku".
+          src/jade/agent-sdk/spawn.ts calls SDK methods directly.
+          s-team/*.md STO frontmatter hardcodes model IDs.
+        </what-breaks>
+        <detection>
+          npm outdated @anthropic-ai/sdk. Model ID changes need manual review
+          (no automated detection unless API returns 404 on old model IDs).
+        </detection>
+        <mitigation>
+          Model IDs are centralized in STO frontmatter + auth resolve defaults.
+          deriveEffort() uses substring matching (opus/sonnet/haiku) which survives
+          version bumps (claude-opus-4-6 → claude-opus-4-7 still matches).
+        </mitigation>
+      </surface>
+
+      <surface name="zod" frequency="rare" risk="high-on-major">
+        <what-changes>Zod v4 was a major breaking release (just fixed in this PR).</what-changes>
+        <what-breaks>
+          ZodTypeDef removed, .errors→.issues, z.record() arity change.
+          Any WebMCP tool using zod schemas is affected.
+        </what-breaks>
+        <detection>npm outdated zod. Build failures are immediate.</detection>
+        <mitigation>
+          Fixed in this commit. Three files touched. All zod usage is in
+          webmcp/shared/ (register.ts, validate.ts) and tool input schemas.
+        </mitigation>
+      </surface>
+    </sync-surfaces>
+
+    <recommended-daily-sync-script>
+      <!--
+        This should be automated as a GitHub Action or cron job.
+        Steps:
+        1. npm outdated - check for package updates
+        2. git fetch upstream (knowledge-work-plugins) - check for new commits
+        3. diff upstream plugin list against last sync
+        4. npm update - apply semver-compatible updates
+        5. npm run build - catch type errors from updates
+        6. npm test - catch behavioral regressions
+        7. If all pass: update upstream-ref.json, commit, open PR
+        8. If build/test fails: open issue with diff for manual review
+      -->
+      <step>npm outdated --json</step>
+      <step>git -C ../knowledge-work-plugins fetch origin main</step>
+      <step>git -C ../knowledge-work-plugins log --oneline $(cat upstream-ref.json | jq -r .commit)..origin/main</step>
+      <step>npm update</step>
+      <step>npm run build</step>
+      <step>npm test</step>
+    </recommended-daily-sync-script>
+  </upstream-sync>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 3: PACKAGE VERSIONS (post-upgrade)                             -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+  <packages>
+    <dependency name="@anthropic-ai/sdk" pinned="^0.78.0" installed="0.78.0" latest="0.78.0" status="current" />
+    <dependency name="tweakcc" pinned="^4.0.11" installed="4.0.11" latest="4.0.11" status="current" />
+    <dependency name="zod" pinned="^4.3.6" installed="4.3.6" latest="4.3.6" status="current" previous="^3.23.0" />
+    <devDependency name="@types/node" pinned="^25.4.0" installed="25.4.0" latest="25.4.0" status="current" previous="^25.3.5" />
+    <devDependency name="typescript" pinned="^5.9.3" installed="5.9.3" latest="5.9.3" status="current" previous="^5.5.0" />
+    <devDependency name="vitest" pinned="^4.0.18" installed="4.0.18" latest="4.0.18" status="current" previous="^2.1.0" />
+  </packages>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 4: OPEN ITEMS FOR NEXT PR                                      -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+  <open-items>
+    <item priority="P0" category="integration">
+      <title>jade-harness must import from @jadecli/knowledge-teams-plugins/kw</title>
+      <description>
+        The old detectKW() in jade-harness reads ~/.jade/config.json kw_repo_map.
+        It should be replaced with: import { detectKW } from "@jadecli/knowledge-teams-plugins/kw".
+        The old kw_repo_map in ~/.jade/config.json should emit a deprecation warning.
+      </description>
+    </item>
+
+    <item priority="P1" category="coverage">
+      <title>Missing STO files for 4 VP seats</title>
+      <description>
+        KW-01 (CEO), KW-06 (CMO), KW-11 (CSO2/Search), KW-12 (CRO2/Research)
+        have sto: null in seats.json. These seats fall back to sonnet/medium defaults.
+        Create s-team/ceo.md, s-team/cmo.md, s-team/cso2.md, s-team/cro2.md with
+        appropriate model, safety_research, fitness_function, and budget_tool_calls.
+      </description>
+    </item>
+
+    <item priority="P1" category="automation">
+      <title>Automated upstream sync GitHub Action</title>
+      <description>
+        Create .github/workflows/upstream-sync.yml that runs daily:
+        fetches anthropics/knowledge-work-plugins, diffs against upstream-ref.json
+        commit, runs build+test, opens PR if changes detected. This is the core
+        mitigation for the "daily upstream changes" challenge.
+      </description>
+    </item>
+
+    <item priority="P1" category="automation">
+      <title>Automated dependency update workflow</title>
+      <description>
+        Create .github/workflows/deps-update.yml that runs daily:
+        npm outdated --json, npm update, build, test, commit if clean.
+        Should handle major version bumps separately (open issue, not auto-merge).
+        Zod v3→v4 is a case study of why majors need manual review.
+      </description>
+    </item>
+
+    <item priority="P2" category="architecture">
+      <title>Reconcile jade-harness-v2 with knowledge-teams-plugins</title>
+      <description>
+        ROTS measurement, auth resolution, agent definitions, and tweakcc integration
+        exist in both repos. jade-harness should merge INTO knowledge-teams-plugins
+        as src/jade/ — which is where the SDK integration code already lives.
+      </description>
+    </item>
+
+    <item priority="P2" category="model-tracking">
+      <title>Model ID update strategy</title>
+      <description>
+        When Anthropic releases claude-opus-4-7 or claude-sonnet-4-7:
+        - Update s-team/*.md STO frontmatter (10 files)
+        - Update src/jade/auth/resolve.ts DEFAULT_MODELS
+        - deriveEffort() substring matching survives version bumps automatically
+        - seats.json defaults.model needs update
+        Consider extracting model IDs into a single models.json config.
+      </description>
+    </item>
+
+    <item priority="P3" category="testing">
+      <title>Integration test for detectKWFromCwd()</title>
+      <description>
+        Currently only unit tests exist. detectKWFromCwd() shells out to git
+        and is not tested. Add an integration test that creates a temp git repo
+        with a configured remote and validates detection.
+      </description>
+    </item>
+  </open-items>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+  <!-- SECTION 5: BUILD / TEST VERIFICATION                                   -->
+  <!-- ═══════════════════════════════════════════════════════════════════════ -->
+
+  <verification>
+    <build status="pass">tsc compiles with zero errors</build>
+    <tests status="pass" total="49" passed="49" failed="0">
+      <file name="tests/kw-detect.test.ts" tests="22" status="pass" />
+      <file name="tests/compose.test.ts" tests="7" status="pass" />
+      <file name="tests/webmcp.test.ts" tests="10" status="pass" />
+      <file name="tests/jade-sdk.test.ts" tests="10" status="pass" />
+    </tests>
+    <vulnerabilities>0 (was 5 moderate before vitest upgrade)</vulnerabilities>
+  </verification>
+</handover>
