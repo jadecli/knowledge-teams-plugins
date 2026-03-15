@@ -28,13 +28,18 @@ export interface CostAwareTelemetryEvent extends TelemetryEvent {
   model?: string;
 }
 
+const MAX_EVENTS = 10_000;
 const events: CostAwareTelemetryEvent[] = [];
 
 /**
  * Record a tool invocation for usage tracking.
+ * Drops oldest events when the buffer exceeds MAX_EVENTS.
  */
 export function recordInvocation(event: TelemetryEvent | CostAwareTelemetryEvent): void {
   events.push(event);
+  if (events.length > MAX_EVENTS) {
+    events.splice(0, events.length - MAX_EVENTS);
+  }
 }
 
 /**
@@ -49,6 +54,19 @@ export function getEvents(): readonly CostAwareTelemetryEvent[] {
  */
 export function clearTelemetry(): void {
   events.length = 0;
+}
+
+function sumCostBy(
+  keyFn: (e: CostAwareTelemetryEvent) => string | undefined,
+): Record<string, number> {
+  const result: Record<string, number> = {};
+  for (const event of events) {
+    const key = keyFn(event);
+    if (event.costUSD != null && key) {
+      result[key] = (result[key] ?? 0) + event.costUSD;
+    }
+  }
+  return result;
 }
 
 /**
@@ -70,26 +88,14 @@ export function getAggregateCost(): { totalCostUSD: number; eventCount: number }
  * Get cost breakdown by organization ID.
  */
 export function getCostByOrganization(): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (const event of events) {
-    if (event.costUSD != null && event.organizationId) {
-      result[event.organizationId] = (result[event.organizationId] ?? 0) + event.costUSD;
-    }
-  }
-  return result;
+  return sumCostBy((e) => e.organizationId);
 }
 
 /**
  * Get cost breakdown by model.
  */
 export function getCostByModel(): Record<string, number> {
-  const result: Record<string, number> = {};
-  for (const event of events) {
-    if (event.costUSD != null && event.model) {
-      result[event.model] = (result[event.model] ?? 0) + event.costUSD;
-    }
-  }
-  return result;
+  return sumCostBy((e) => e.model);
 }
 
 /**

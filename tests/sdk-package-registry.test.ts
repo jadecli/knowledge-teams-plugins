@@ -37,6 +37,25 @@ describe("SDK Package Registry", () => {
     const names = MCP_CORE_TS_PACKAGES.map((p) => p.name);
     expect(names).toContain("@modelcontextprotocol/sdk");
     expect(names).toContain("@modelcontextprotocol/inspector");
+    expect(names).toContain("@modelcontextprotocol/ext-apps");
+  });
+
+  it("has Python SDK packages pinned", () => {
+    const names = ANTHROPIC_PY_PACKAGES.map((p) => p.name);
+    expect(names).toContain("anthropic");
+    expect(names).toContain("claude-agent-sdk");
+    expect(names).toContain("mcp");
+    for (const pkg of ANTHROPIC_PY_PACKAGES) {
+      expect(pkg.language).toBe("python");
+    }
+  });
+
+  it("has Python MCP server packages with supportsMCPs", () => {
+    for (const pkg of MCP_SERVER_PY_PACKAGES) {
+      expect(pkg.language).toBe("python");
+      expect(pkg.supportsMCPs).toBeDefined();
+      expect(pkg.supportsMCPs!.length).toBeGreaterThan(0);
+    }
   });
 
   it("MCP server packages reference their MCP IDs", () => {

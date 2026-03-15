@@ -80,6 +80,13 @@ export interface MCPServerDefinition {
   sourceUrl: string;
 }
 
+// ─── Maintainer / Source Constants ─────────────────────────────────────────────
+
+const MAINTAINER_ACTIVE = "MCP Steering Group";
+const MAINTAINER_ARCHIVED = "MCP Steering Group (archived)";
+const SOURCE_ACTIVE = "https://github.com/modelcontextprotocol/servers/tree/main/src";
+const SOURCE_ARCHIVED = "https://github.com/modelcontextprotocol/servers-archived";
+
 // ─── Reference MCP Servers (active, maintained by MCP steering group) ─────────
 
 export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
@@ -93,8 +100,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.TESTING,
     additionalCategories: [],
     status: "active",
-    maintainer: "MCP Steering Group",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/everything",
+    maintainer: MAINTAINER_ACTIVE,
+    sourceUrl: `${SOURCE_ACTIVE}/everything`,
   },
   {
     id: "filesystem",
@@ -106,8 +113,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.FILESYSTEM,
     additionalCategories: [MCPCategory.DOCUMENTS],
     status: "active",
-    maintainer: "MCP Steering Group",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/filesystem",
+    maintainer: MAINTAINER_ACTIVE,
+    sourceUrl: `${SOURCE_ACTIVE}/filesystem`,
   },
   {
     id: "memory",
@@ -119,8 +126,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.MEMORY,
     additionalCategories: [MCPCategory.WIKI_KNOWLEDGE_BASE],
     status: "active",
-    maintainer: "MCP Steering Group",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/memory",
+    maintainer: MAINTAINER_ACTIVE,
+    sourceUrl: `${SOURCE_ACTIVE}/memory`,
   },
   {
     id: "fetch",
@@ -132,8 +139,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.SEARCH,
     additionalCategories: [MCPCategory.DOCUMENTS],
     status: "active",
-    maintainer: "MCP Steering Group",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/fetch",
+    maintainer: MAINTAINER_ACTIVE,
+    sourceUrl: `${SOURCE_ACTIVE}/fetch`,
   },
   {
     id: "git",
@@ -145,8 +152,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.SOFTWARE_CODING,
     additionalCategories: [MCPCategory.FILESYSTEM],
     status: "active",
-    maintainer: "MCP Steering Group",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/git",
+    maintainer: MAINTAINER_ACTIVE,
+    sourceUrl: `${SOURCE_ACTIVE}/git`,
   },
   {
     id: "sequential-thinking",
@@ -158,8 +165,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.REASONING,
     additionalCategories: [],
     status: "active",
-    maintainer: "MCP Steering Group",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/sequentialthinking",
+    maintainer: MAINTAINER_ACTIVE,
+    sourceUrl: `${SOURCE_ACTIVE}/sequentialthinking`,
   },
   {
     id: "time",
@@ -171,8 +178,8 @@ export const REFERENCE_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.TIME,
     additionalCategories: [MCPCategory.CALENDAR],
     status: "active",
-    maintainer: "MCP Steering Group",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers/tree/main/src/time",
+    maintainer: MAINTAINER_ACTIVE,
+    sourceUrl: `${SOURCE_ACTIVE}/time`,
   },
 ];
 
@@ -189,8 +196,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.SOFTWARE_CODING,
     additionalCategories: [MCPCategory.PROJECT_MANAGEMENT],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "gitlab",
@@ -202,8 +209,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.SOFTWARE_CODING,
     additionalCategories: [MCPCategory.PROJECT_MANAGEMENT],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "brave-search",
@@ -215,8 +222,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.SEARCH,
     additionalCategories: [],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "puppeteer",
@@ -228,8 +235,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.BROWSER,
     additionalCategories: [MCPCategory.TESTING],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "slack",
@@ -241,8 +248,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.CHAT,
     additionalCategories: [MCPCategory.CONVERSATION_INTELLIGENCE],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "google-maps",
@@ -254,8 +261,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.SEARCH,
     additionalCategories: [],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "postgres",
@@ -267,8 +274,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.DATABASE,
     additionalCategories: [MCPCategory.DATA_WAREHOUSE, MCPCategory.ANALYTICS_BI],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "redis",
@@ -280,8 +287,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.DATABASE,
     additionalCategories: [MCPCategory.MEMORY],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "google-drive",
@@ -293,8 +300,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.DOCUMENTS,
     additionalCategories: [MCPCategory.FILESYSTEM],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "aws-kb-retrieval",
@@ -306,8 +313,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.WIKI_KNOWLEDGE_BASE,
     additionalCategories: [MCPCategory.SEARCH],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
   {
     id: "everart",
@@ -319,8 +326,8 @@ export const ARCHIVED_MCP_SERVERS: MCPServerDefinition[] = [
     category: MCPCategory.DESIGN_GRAPHICS,
     additionalCategories: [],
     status: "archived",
-    maintainer: "MCP Steering Group (archived)",
-    sourceUrl: "https://github.com/modelcontextprotocol/servers-archived",
+    maintainer: MAINTAINER_ARCHIVED,
+    sourceUrl: SOURCE_ARCHIVED,
   },
 ];
 
@@ -382,27 +389,39 @@ export type FWPRecommendedMCP = (typeof FWP_RECOMMENDED_MCPS)[keyof typeof FWP_R
 
 /**
  * MCPs that appear in BOTH knowledge-work and financial-work plugin sets.
+ * Derived from the intersection of KWP and FWP sets.
  */
-export const SHARED_MCPS = [
-  "filesystem",
-  "memory",
-  "fetch",
-  "git",
-  "github",
-  "brave-search",
-  "puppeteer",
-] as const;
+const kwpIdSet = new Set(Object.values(KWP_RECOMMENDED_MCPS));
+const fwpIdSet = new Set(Object.values(FWP_RECOMMENDED_MCPS));
+
+export const SHARED_MCPS = Object.values(KWP_RECOMMENDED_MCPS).filter(
+  (id) => fwpIdSet.has(id as FWPRecommendedMCP),
+) as string[];
+
+// ─── Pre-computed Lookup Structures ──────────────────────────────────────────
+
+const mcpByIdMap = new Map<string, MCPServerDefinition>(
+  ALL_MCP_SERVERS.map((s) => [s.id, s]),
+);
+
+const mcpByCategoryMap = new Map<MCPCategoryValue, MCPServerDefinition[]>();
+for (const server of ALL_MCP_SERVERS) {
+  const cats = [server.category, ...server.additionalCategories];
+  for (const cat of cats) {
+    const list = mcpByCategoryMap.get(cat) ?? [];
+    list.push(server);
+    mcpByCategoryMap.set(cat, list);
+  }
+}
 
 // ─── Lookup Helpers ───────────────────────────────────────────────────────────
 
 export function getMCPById(id: string): MCPServerDefinition | undefined {
-  return ALL_MCP_SERVERS.find((s) => s.id === id);
+  return mcpByIdMap.get(id);
 }
 
 export function getMCPsByCategory(category: MCPCategoryValue): MCPServerDefinition[] {
-  return ALL_MCP_SERVERS.filter(
-    (s) => s.category === category || s.additionalCategories.includes(category),
-  );
+  return mcpByCategoryMap.get(category) ?? [];
 }
 
 export function getMCPsWithNpmPackage(): MCPServerDefinition[] {
@@ -410,11 +429,9 @@ export function getMCPsWithNpmPackage(): MCPServerDefinition[] {
 }
 
 export function getKWPMCPs(): MCPServerDefinition[] {
-  const ids = new Set(Object.values(KWP_RECOMMENDED_MCPS));
-  return ALL_MCP_SERVERS.filter((s) => ids.has(s.id as KWPRecommendedMCP));
+  return ALL_MCP_SERVERS.filter((s) => kwpIdSet.has(s.id as KWPRecommendedMCP));
 }
 
 export function getFWPMCPs(): MCPServerDefinition[] {
-  const ids = new Set(Object.values(FWP_RECOMMENDED_MCPS));
-  return ALL_MCP_SERVERS.filter((s) => ids.has(s.id as FWPRecommendedMCP));
+  return ALL_MCP_SERVERS.filter((s) => fwpIdSet.has(s.id as FWPRecommendedMCP));
 }

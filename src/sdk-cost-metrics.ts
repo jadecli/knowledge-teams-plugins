@@ -414,6 +414,8 @@ export function accumulateModelUsage(
  * Tracks cost across multiple query() calls in a session.
  * The Agent SDK does NOT aggregate across calls — this fills that gap.
  */
+const MAX_QUERY_HISTORY = 1_000;
+
 export class SessionCostTracker {
   readonly organizationId: string;
   readonly sessionId: string;
@@ -439,6 +441,9 @@ export class SessionCostTracker {
     this._queryCount++;
     accumulateModelUsage(this._modelUsage, result.modelUsage);
     this._queries.push(result);
+    if (this._queries.length > MAX_QUERY_HISTORY) {
+      this._queries.splice(0, this._queries.length - MAX_QUERY_HISTORY);
+    }
   }
 
   get totalCostUSD(): number {

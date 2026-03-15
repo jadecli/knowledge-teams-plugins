@@ -127,6 +127,21 @@ describe("enhanced telemetry — cost-aware", () => {
     expect(byModel["claude-haiku-4-5"]).toBeCloseTo(0.02);
   });
 
+  it("caps events at MAX_EVENTS (10000), dropping oldest", () => {
+    for (let i = 0; i < 10_005; i++) {
+      recordInvocation({
+        toolName: `tool-${i}`,
+        timestamp: i,
+        durationMs: 1,
+        success: true,
+      });
+    }
+    const events = getEvents();
+    expect(events.length).toBeLessThanOrEqual(10_000);
+    // Oldest events were dropped
+    expect(events[0].toolName).toBe("tool-5");
+  });
+
   it("calculates average duration by tool", () => {
     recordInvocation({ toolName: "read", timestamp: 0, durationMs: 100, success: true });
     recordInvocation({ toolName: "read", timestamp: 0, durationMs: 200, success: true });

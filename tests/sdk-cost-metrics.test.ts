@@ -42,6 +42,17 @@ describe("estimateCostUSD", () => {
     expect(cost).toBeCloseTo(3.435, 3);
   });
 
+  it("calculates cost for fast mode pricing", () => {
+    const cost = estimateCostUSD("claude-opus-4-6-fast", {
+      inputTokens: 1_000_000,
+      outputTokens: 1_000_000,
+      cacheReadInputTokens: 0,
+      cacheCreationInputTokens: 0,
+    });
+    // $30 input + $150 output = $180
+    expect(cost).toBe(180);
+  });
+
   it("returns NaN for unknown model", () => {
     expect(estimateCostUSD("unknown-model", {
       inputTokens: 100,
@@ -125,6 +136,23 @@ describe("SessionCostTracker", () => {
     expect(tracker.totalDurationMs).toBe(10000);
   });
 
+  it("accumulates model usage across queries", () => {
+    const tracker = new SessionCostTracker("org-123", "s1");
+    tracker.record(makeResult(0.05, 3));
+    tracker.record(makeResult(0.03, 2));
+    const usage = tracker.modelUsage["claude-sonnet-4-6"];
+    expect(usage).toBeDefined();
+    expect(usage.inputTokens).toBe(2000);
+    expect(usage.costUSD).toBeCloseTo(0.08);
+  });
+
+  it("exposes readonly queries list", () => {
+    const tracker = new SessionCostTracker("org-123", "s1");
+    tracker.record(makeResult(0.01, 1));
+    expect(tracker.queries).toHaveLength(1);
+    expect(tracker.queries[0].total_cost_usd).toBe(0.01);
+  });
+
   it("produces a JSON snapshot with organization ID", () => {
     const tracker = new SessionCostTracker("org-456", "session-xyz");
     tracker.record(makeResult(0.10, 5));
@@ -203,5 +231,41 @@ describe("dependency trace", () => {
     // Graph has shared descendants reachable via multiple paths
     // Visited nodes are marked with ↺ — correct dedup behavior
     expect(tree).toContain("↺");
+  });
+
+  it("prints upstream tree", () => {
+    const tree = printDependencyTree("plugin-session-tracker", "upstream");
+    expect(tree).toContain("SessionCostTracker");
+    expect(tree).toContain("Agent SDK");
+    expect(tree).toContain("Anthropic Messages API");
+  });
+
+  it("returns empty for unknown node in trace", () => {
+    expect(traceUpstream("nonexistent")).toEqual([]);
+    expect(traceDownstream("nonexistent")).toEqual([]);
+  });
+
+  it("prints unknown marker for missing node", () => {
+    const tree = printDependencyTree("nonexistent");
+    expect(tree).toContain("? nonexistent (unknown)");
+  });
+
+  it("handles custom graph", () => {
+    const graph = {
+      a: {
+        id: "a", name: "A", source: "test", fields: [],
+        dependsOn: ["b"], dependedBy: [],
+        layer: "plugin" as const, hasTelemetry: false,
+      },
+      b: {
+        id: "b", name: "B", source: "test", fields: [],
+        dependsOn: [], dependedBy: ["a"],
+        layer: "api" as const, hasTelemetry: true,
+      },
+    };
+    const upstream = traceUpstream("a", graph);
+    expect(upstream.map((n) => n.id)).toEqual(["a", "b"]);
+    const downstream = traceDownstream("b", graph);
+    expect(downstream.map((n) => n.id)).toEqual(["b", "a"]);
   });
 });

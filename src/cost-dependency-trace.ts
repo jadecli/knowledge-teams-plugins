@@ -325,13 +325,17 @@ export const COST_DEPENDENCY_GRAPH: Record<string, DependencyNode> = {
 
 // ─── Recursive Trace Functions ────────────────────────────────────────────────
 
-/**
- * Trace all upstream dependencies recursively from a starting node.
- */
-export function traceUpstream(
+type TraceDirection = "upstream" | "downstream";
+
+function edgesFor(node: DependencyNode, direction: TraceDirection): string[] {
+  return direction === "upstream" ? node.dependsOn : node.dependedBy;
+}
+
+function traceGraph(
   nodeId: string,
-  graph: Record<string, DependencyNode> = COST_DEPENDENCY_GRAPH,
-  visited = new Set<string>(),
+  direction: TraceDirection,
+  graph: Record<string, DependencyNode>,
+  visited: Set<string>,
 ): DependencyNode[] {
   if (visited.has(nodeId)) return [];
   visited.add(nodeId);
@@ -340,10 +344,20 @@ export function traceUpstream(
   if (!node) return [];
 
   const result: DependencyNode[] = [node];
-  for (const depId of node.dependsOn) {
-    result.push(...traceUpstream(depId, graph, visited));
+  for (const depId of edgesFor(node, direction)) {
+    result.push(...traceGraph(depId, direction, graph, visited));
   }
   return result;
+}
+
+/**
+ * Trace all upstream dependencies recursively from a starting node.
+ */
+export function traceUpstream(
+  nodeId: string,
+  graph: Record<string, DependencyNode> = COST_DEPENDENCY_GRAPH,
+): DependencyNode[] {
+  return traceGraph(nodeId, "upstream", graph, new Set());
 }
 
 /**
@@ -352,19 +366,8 @@ export function traceUpstream(
 export function traceDownstream(
   nodeId: string,
   graph: Record<string, DependencyNode> = COST_DEPENDENCY_GRAPH,
-  visited = new Set<string>(),
 ): DependencyNode[] {
-  if (visited.has(nodeId)) return [];
-  visited.add(nodeId);
-
-  const node = graph[nodeId];
-  if (!node) return [];
-
-  const result: DependencyNode[] = [node];
-  for (const depId of node.dependedBy) {
-    result.push(...traceDownstream(depId, graph, visited));
-  }
-  return result;
+  return traceGraph(nodeId, "downstream", graph, new Set());
 }
 
 /**
@@ -381,23 +384,32 @@ export function findUninstrumented(
  */
 export function printDependencyTree(
   nodeId: string,
-  direction: "upstream" | "downstream" = "downstream",
+  direction: TraceDirection = "downstream",
   graph: Record<string, DependencyNode> = COST_DEPENDENCY_GRAPH,
-  indent = 0,
-  visited = new Set<string>(),
 ): string {
-  if (visited.has(nodeId)) return `${"  ".repeat(indent)}↺ ${nodeId} (cycle)\n`;
+  return printTreeRecursive(nodeId, direction, graph, 0, new Set());
+}
+
+function printTreeRecursive(
+  nodeId: string,
+  direction: TraceDirection,
+  graph: Record<string, DependencyNode>,
+  indent: number,
+  visited: Set<string>,
+): string {
+  const pad = "  ".repeat(indent);
+
+  if (visited.has(nodeId)) return `${pad}↺ ${nodeId} (cycle)\n`;
   visited.add(nodeId);
 
   const node = graph[nodeId];
-  if (!node) return `${"  ".repeat(indent)}? ${nodeId} (unknown)\n`;
+  if (!node) return `${pad}? ${nodeId} (unknown)\n`;
 
-  const telemetryMarker = node.hasTelemetry ? "✓" : "✗";
-  let output = `${"  ".repeat(indent)}[${telemetryMarker}] ${node.name} (${node.layer})\n`;
+  const marker = node.hasTelemetry ? "✓" : "✗";
+  let output = `${pad}[${marker}] ${node.name} (${node.layer})\n`;
 
-  const children = direction === "downstream" ? node.dependedBy : node.dependsOn;
-  for (const childId of children) {
-    output += printDependencyTree(childId, direction, graph, indent + 1, visited);
+  for (const childId of edgesFor(node, direction)) {
+    output += printTreeRecursive(childId, direction, graph, indent + 1, visited);
   }
 
   return output;

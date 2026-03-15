@@ -72,6 +72,13 @@ describe("MCP Bridge Enums", () => {
       expect(fwpIds.has(shared)).toBe(true);
     }
   });
+
+  it("SHARED_MCPS is exhaustive — no shared MCPs are missing", () => {
+    const kwpIds = new Set(Object.values(KWP_RECOMMENDED_MCPS));
+    const fwpIds = new Set(Object.values(FWP_RECOMMENDED_MCPS));
+    const intersection = [...kwpIds].filter((id) => fwpIds.has(id as any));
+    expect(SHARED_MCPS.length).toBe(intersection.length);
+  });
 });
 
 describe("MCP Lookup Helpers", () => {
@@ -91,6 +98,19 @@ describe("MCP Lookup Helpers", () => {
     const dbIds = dbServers.map((s) => s.id);
     expect(dbIds).toContain("postgres");
     expect(dbIds).toContain("redis");
+  });
+
+  it("getMCPsByCategory finds servers via additionalCategories", () => {
+    const docServers = getMCPsByCategory(MCPCategory.DOCUMENTS);
+    const ids = docServers.map((s) => s.id);
+    // filesystem has DOCUMENTS as additionalCategory
+    expect(ids).toContain("filesystem");
+    // fetch has DOCUMENTS as additionalCategory
+    expect(ids).toContain("fetch");
+  });
+
+  it("getMCPsByCategory returns empty for unused category", () => {
+    expect(getMCPsByCategory(MCPCategory.EMAIL)).toEqual([]);
   });
 
   it("getMCPsWithNpmPackage excludes Python-only servers", () => {
