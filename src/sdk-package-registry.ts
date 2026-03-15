@@ -51,7 +51,7 @@ export interface PinnedPackage {
 export const ANTHROPIC_TS_PACKAGES: PinnedPackage[] = [
   {
     name: "@anthropic-ai/claude-agent-sdk",
-    pinnedVersion: "0.2.72",
+    pinnedVersion: "0.2.76",
     scope: "anthropic-sdk",
     language: "typescript",
     production: true,
@@ -326,7 +326,7 @@ export const LANGUAGE_ANALYZER_PACKAGES: PinnedPackage[] = [
 export const ANTHROPIC_PY_PACKAGES: PinnedPackage[] = [
   {
     name: "anthropic",
-    pinnedVersion: "0.49.0",
+    pinnedVersion: "0.84.0",
     scope: "anthropic-sdk",
     language: "python",
     production: true,
@@ -334,7 +334,7 @@ export const ANTHROPIC_PY_PACKAGES: PinnedPackage[] = [
   },
   {
     name: "claude-agent-sdk",
-    pinnedVersion: "0.2.72",
+    pinnedVersion: "0.1.48",
     scope: "anthropic-sdk",
     language: "python",
     production: true,
@@ -342,7 +342,7 @@ export const ANTHROPIC_PY_PACKAGES: PinnedPackage[] = [
   },
   {
     name: "mcp",
-    pinnedVersion: "1.27.1",
+    pinnedVersion: "1.26.0",
     scope: "mcp-core",
     language: "python",
     production: true,
@@ -355,7 +355,7 @@ export const ANTHROPIC_PY_PACKAGES: PinnedPackage[] = [
 export const MCP_SERVER_PY_PACKAGES: PinnedPackage[] = [
   {
     name: "mcp-server-fetch",
-    pinnedVersion: "2025.3.28",
+    pinnedVersion: "2025.4.7",
     scope: "mcp-server",
     language: "python",
     production: true,
@@ -364,7 +364,7 @@ export const MCP_SERVER_PY_PACKAGES: PinnedPackage[] = [
   },
   {
     name: "mcp-server-git",
-    pinnedVersion: "2025.3.28",
+    pinnedVersion: "2026.1.14",
     scope: "mcp-server",
     language: "python",
     production: true,
@@ -373,7 +373,7 @@ export const MCP_SERVER_PY_PACKAGES: PinnedPackage[] = [
   },
   {
     name: "mcp-server-time",
-    pinnedVersion: "2025.3.28",
+    pinnedVersion: "2026.1.26",
     scope: "mcp-server",
     language: "python",
     production: true,

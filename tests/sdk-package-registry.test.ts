@@ -99,7 +99,7 @@ describe("Package Registry Queries", () => {
   it("toDependenciesFragment generates package.json fragment", () => {
     const fragment = toDependenciesFragment(ANTHROPIC_TS_PACKAGES);
     expect(fragment["@anthropic-ai/sdk"]).toBe("0.78.0");
-    expect(fragment["@anthropic-ai/claude-agent-sdk"]).toBe("0.2.72");
+    expect(fragment["@anthropic-ai/claude-agent-sdk"]).toBe("0.2.76");
     // Python packages should be excluded
     expect(fragment["anthropic"]).toBeUndefined();
   });

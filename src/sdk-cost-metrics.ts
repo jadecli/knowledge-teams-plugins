@@ -2,14 +2,14 @@
  * Canonical Cost & Time Metrics — Claude Agent SDK + Anthropic API
  *
  * Consolidates every cost/time data structure available across:
- *   1. @anthropic-ai/claude-agent-sdk v0.2.72 (Agent SDK) — query()-level metrics
+ *   1. @anthropic-ai/claude-agent-sdk v0.2.76 (Agent SDK) — query()-level metrics
  *   2. @anthropic-ai/sdk v0.78.0 (REST SDK) — per-message Usage from /v1/messages
  *   3. Anthropic Admin API — /v1/organizations/{usage_report,cost_report,usage_report/claude_code}
- *   4. Claude Code v2.1.72 OTEL telemetry — claude_code.cost.usage, claude_code.token.usage
+ *   4. Claude Code v2.1.76 OTEL telemetry — claude_code.cost.usage, claude_code.token.usage
  *
  * NOTE: Claude Code versioning is 2.1.x (NOT 2.7.x). Version "2.7.2" does not exist.
- *       Latest as of 2026-03: Claude Code 2.1.72, @anthropic-ai/sdk 0.78.0,
- *       @anthropic-ai/claude-agent-sdk 0.2.72
+ *       Latest as of 2026-03: Claude Code 2.1.76, @anthropic-ai/sdk 0.78.0,
+ *       @anthropic-ai/claude-agent-sdk 0.2.76
  *
  * Source docs (canonical):
  *   - https://platform.claude.com/docs/en/agent-sdk/cost-tracking
@@ -25,9 +25,9 @@ export const SDK_VERSIONS = {
   /** @anthropic-ai/sdk — REST API client */
   REST_SDK: "0.78.0",
   /** @anthropic-ai/claude-agent-sdk — Agent orchestration SDK */
-  AGENT_SDK: "0.2.72",
+  AGENT_SDK: "0.2.76",
   /** Claude Code CLI */
-  CLAUDE_CODE: "2.1.72",
+  CLAUDE_CODE: "2.1.76",
 } as const;
 
 // ─── 1. Anthropic REST API Usage (from @anthropic-ai/sdk v0.78.0) ────────────
