@@ -57,6 +57,7 @@ Alternatively, use `claude auth login` if `setup-token` is unavailable.
 | `ci-autofix.yml` | CI failure | Auto-fix build/test failures |
 | `issue-triage.yml` | New issue | Auto-categorize and label |
 | `weekly-audit.yml` | Monday 9am UTC | Stale code / drift audit |
+| `security-review.yml` | PR | Layered security review (OAuth scan + API key security review) |
 
 ### Architecture Decision Framework
 
@@ -122,6 +123,74 @@ Secure crawler for Claude/Anthropic documentation (`lib/`):
 - **Weekly refresh**: `weekly-audit.yml` runs `npm run llms:sync`
 
 Agents reference cached docs instead of repeated WebFetch calls.
+
+## Security TDD
+
+Jade prioritizes **Security Test-Driven Development** — writing security tests first
+reduces the Bayesian prior probability that vulnerabilities exist in production code.
+
+### Convention
+
+- Security test files use `*.security.test.ts` suffix in `tests/security/`
+- Each `describe` block opens with a `@security-test` JSDoc frontmatter block
+- Frontmatter is validated by `tests/security/security-frontmatter.ts`
+
+### Required Frontmatter Fields
+
+```typescript
+/**
+ * @security-test
+ * ---
+ * threat-model: Description of the threat being tested
+ * owasp-category: A03:2021 Injection (OWASP 2021 format)
+ * attack-vector: How an attacker would exploit this
+ * bayesian-prior: 0.15 (P(vuln) before test exists)
+ * bayesian-posterior: 0.02 (P(vuln) after test passes)
+ * cve-reference: CVE-XXXX-XXXXX or N/A (preventive)
+ * ---
+ */
+```
+
+### Bayesian Probability Model
+
+Each security test documents two probabilities:
+- **Prior** `P(vuln|no_test)` — estimated probability the vulnerability exists without this test
+- **Posterior** `P(vuln|test_passes)` — reduced probability after the test passes
+
+Compound reduction across N tests: `P_final = P_0 * Product(posterior_i / prior_i)`
+
+The lower the compound reduction, the more secure the codebase. This makes security
+posture measurable and auditable — not just a checklist.
+
+### Running Security Tests
+
+```bash
+npm run test:security     # Run security tests only
+npm run test:coverage     # Run all tests with coverage
+npm test                  # Run all tests (includes security)
+```
+
+### CI Enforcement
+
+Security is enforced via `security-review.yml` with layered defense:
+1. **Layer 1**: `claude-code-action@v1` with custom security prompt (OAuth token)
+2. **Layer 2**: `claude-code-security-review@main` (Anthropic API key)
+
+Required GitHub secrets: `CLAUDE_CODE_OAUTH_TOKEN` (existing), `CLAUDE_API_KEY` (new).
+
+### Security Test Coverage
+
+Current attack surfaces with tests in `tests/security/`:
+
+| Test File | Attack Surface | OWASP Categories |
+|---|---|---|
+| `input-validation.security.test.ts` | WebMCP Zod schemas | A03, A05, A07 |
+| `url-allowlist.security.test.ts` | llms-crawler URL allowlist | A01, A10 |
+| `schema-injection.security.test.ts` | Drizzle ORM / Postgres | A03, A07 |
+| `secrets-detection.security.test.ts` | Hardcoded secrets in repo | A02 |
+
+When adding new attack surfaces (new WebMCP tools, new external fetchers, new DB tables),
+write security tests FIRST before implementing the feature.
 
 ## Semver Subtask Conventions
 

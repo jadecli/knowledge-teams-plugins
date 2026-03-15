@@ -107,25 +107,57 @@ For each area:
 - Recommended form (what it should be simplified to)
 - Lines that can be deleted immediately`,
   },
+
+  "security-auditor": {
+    description:
+      "Audits for OWASP Top 10, injection vectors, allowlist bypasses, and unsafe patterns",
+    model: "sonnet",
+    tools: ["Read", "Glob", "Grep"],
+    maxTurns: 25,
+    prompt: `You are a security auditor. Your job is to find vulnerabilities that reduce the Bayesian probability
+of the codebase being secure. Focus on real attack vectors, not theoretical risks.
+
+FIRST: Read .github/security-scan-instructions.md — it contains the canonical Jade security
+checklist covering WebMCP tool contracts, URL allowlist integrity, Drizzle ORM parameterization,
+STO frontmatter injection, and Agent SDK misuse patterns.
+
+Apply that checklist to every file you audit. Additionally check:
+- Agent SDK: is permissionMode "dontAsk" always paired with explicit allowedTools?
+- Could system prompts be influenced by user input (prompt injection)?
+- Are fetch() calls following redirects that could escape the URL allowlist?
+
+For each finding:
+- OWASP category (A01-A10:2021)
+- Severity (Critical/High/Medium/Low)
+- File path and line number
+- Bayesian impact: estimated P(vuln) before and after fix
+- Concrete remediation (code snippet, not just advice)`,
+  },
 } as const satisfies Record<string, AgentDefinition>;
 
 // ─── Lead skeptic prompt ──────────────────────────────────────────────────────
 
 const LEAD_PROMPT = `You are the lead skeptic reviewing the knowledge-teams-plugins codebase.
-Your job: run all three specialist agents in parallel and produce a prioritised audit report.
+Your job: run all four specialist agents in parallel and produce a prioritised audit report.
 
-Spawn all three agents simultaneously using the Agent tool:
+Spawn all four agents simultaneously using the Agent tool:
 - type-auditor: finds TypeScript and SDK misuse
 - dead-code-hunter: finds stubs and unimplemented code
 - simplicity-enforcer: challenges architectural theater
+- security-auditor: finds OWASP Top 10 vulnerabilities, injection vectors, allowlist bypasses
 
-Wait for all three to complete. Then produce a final structured report in this format:
+Wait for all four to complete. Then produce a final structured report in this format:
 
 <audit>
   <critical title="Wrong SDK package">
     <!-- Any use of @anthropic-ai/sdk instead of @anthropic-ai/claude-agent-sdk -->
     <!-- This is the #1 mistake. The REST API SDK is not the Agent SDK. -->
   </critical>
+  <security title="Security vulnerabilities">
+    <!-- OWASP Top 10 findings from security-auditor -->
+    <!-- For each: category, severity, file:line, Bayesian P(vuln) estimate, remediation -->
+    <!-- Injection vectors, allowlist bypasses, secrets exposure, unsafe patterns -->
+  </security>
   <high title="TypeScript violations">
     <!-- any, missing types, type assertions -->
   </high>
@@ -141,7 +173,8 @@ Wait for all three to complete. Then produce a final structured report in this f
   <verdict>
     <!-- 3-5 sentences: what is the codebase actually doing right now vs what it claims?
          What is the minimum viable core worth keeping?
-         What can be deleted immediately? -->
+         What can be deleted immediately?
+         What is the overall security posture? -->
   </verdict>
 </audit>`;
 
