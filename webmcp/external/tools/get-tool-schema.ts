@@ -8,11 +8,18 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 
+interface GetToolSchemaResult {
+  toolName: string;
+  version: string;
+  schema: null;
+  found: boolean;
+}
+
 export const getToolSchema = {
   name: "get-tool-schema",
   description: "Get the input/output schema for a specific marketplace tool",
   inputSchema,
-  handler: async (input: Input) => {
+  handler: async (input: Input): Promise<GetToolSchemaResult> => {
     // Stub: would fetch schema from jadecli.com tool registry
     return {
       toolName: input.toolName,

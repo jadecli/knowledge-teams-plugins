@@ -1,4 +1,4 @@
-import { z, ZodType } from "zod";
+import { ZodType } from "zod";
 
 export interface WebMCPToolDefinition<T = unknown> {
   name: string;
@@ -7,7 +7,8 @@ export interface WebMCPToolDefinition<T = unknown> {
   handler: (input: T) => Promise<unknown>;
 }
 
-const registry = new Map<string, WebMCPToolDefinition>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- registry must store heterogeneous tool types
+const registry = new Map<string, WebMCPToolDefinition<any>>();
 
 /**
  * Register a WebMCP tool. Tools are keyed by name; duplicate names throw.
@@ -16,7 +17,7 @@ export function registerTool<T>(tool: WebMCPToolDefinition<T>): void {
   if (registry.has(tool.name)) {
     throw new Error(`Tool "${tool.name}" is already registered`);
   }
-  registry.set(tool.name, tool as WebMCPToolDefinition);
+  registry.set(tool.name, tool);
 }
 
 /**
