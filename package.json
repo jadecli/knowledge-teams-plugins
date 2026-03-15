@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "latest",
+    "@neondatabase/serverless": "^1.0.2",
+    "pg": "^8.20.0",
+    "undici": "^7.24.3",
     "zod": "^4.0.0"
   },
   "devDependencies": {
