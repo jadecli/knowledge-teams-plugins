@@ -10,7 +10,7 @@
     "review": "tsx scripts/run-skeptical-team.ts"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "latest",
+    "@anthropic-ai/claude-agent-sdk": "^0.2.76",
     "@anthropic-ai/sdk": "^0.78.0",
     "tweakcc": "^4.0.11",
     "zod": "^4.3.6"

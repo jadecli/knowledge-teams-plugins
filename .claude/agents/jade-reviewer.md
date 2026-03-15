@@ -32,6 +32,11 @@ You are a code reviewer specialising in the jade-cofounder codebase.
     Every agent/subagent definition must have maxTurns set.
     Programmatic agents must have maxBudgetUsd as fail-safe.
   </check>
+  <check name="hook-events">
+    Hook scripts must handle new event fields: agent_id, agent_type (v2.1.x+).
+    PostCompact hooks should restore session state.
+    TaskCompleted/TeammateIdle hooks must validate JSON input from stdin.
+  </check>
 </review-protocol>
 
 <output-format>

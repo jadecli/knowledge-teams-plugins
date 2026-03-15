@@ -15,6 +15,7 @@ import type { AgentDefinition } from "@anthropic-ai/claude-agent-sdk";
 // ─── Sub-agent definitions ────────────────────────────────────────────────────
 // Each entry becomes a subagent_type the lead can spawn via the Agent tool.
 // model aliases: "opus" | "sonnet" | "haiku" | "inherit" (NOT full model IDs)
+// v0.2.76+: aliases now resolve correctly on Bedrock/Vertex/Foundry backends
 
 const agents = {
   "type-auditor": {
@@ -165,6 +166,7 @@ export async function runSkepticalCodegenTeam(cwd = process.cwd()): Promise<void
           "You are coordinating a skeptical code review team. Be ruthless. Prefer deletion over abstraction.",
       },
       maxTurns: 60,
+      maxBudgetUsd: 10.0,
     },
   });
 

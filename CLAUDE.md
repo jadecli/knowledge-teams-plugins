@@ -53,6 +53,29 @@ Three modes resolved from environment variables (see `src/jade/auth/resolve.ts`)
 - `api-key` — `ANTHROPIC_API_KEY` set
 - `enterprise` — `JADE_ENTERPRISE_API_KEY` set
 
+## Agent SDK (v0.2.76+)
+
+Uses `@anthropic-ai/claude-agent-sdk` for programmatic agent orchestration:
+- `query()` — V1 async generator for single-shot agent runs
+- `unstable_v2_createSession()` / `unstable_v2_resumeSession()` — V2 session-based API (preview)
+- `forkSession()` — Branch conversations from a point (v0.2.76+)
+- `renameSession()` — Rename session files (v0.2.76+)
+- `agentProgressSummaries` option — Periodic AI-generated progress summaries (v0.2.76+)
+- `settingSources` — Control which settings are loaded (`["project"]`, `["user"]`)
+- Result subtypes: `success`, `error_max_turns`, `error_max_budget_usd`, `error_during_execution`, `error_max_structured_output_retries`
+
+## Hooks
+
+Configured in `.claude/settings.json` and `plugins/*/hooks/hooks.json`:
+- `SessionStart` — Bootstrap environment and resolve MCP secrets
+- `PreCompact` — Persist session state before context compaction
+- `PostCompact` — Restore session state after compaction (v2.1.x+)
+- `InstructionsLoaded` — Log when CLAUDE.md or rules files are loaded (v2.1.x+)
+- `PostToolUse` — TypeScript type-checking on Edit/Write
+- `Stop` — jade-loop continuation logic
+- `TaskCompleted` — Validate agent team task completion (v2.1.x+)
+- `TeammateIdle` — Handle idle teammates in agent teams (v2.1.x+)
+
 ## Rules
 
 - Upstream ref pinned in `upstream-ref.json` — update commit hash when syncing

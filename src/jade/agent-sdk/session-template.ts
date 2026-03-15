@@ -31,14 +31,18 @@ export interface SessionTemplateConfig {
   thinking?: "adaptive" | "enabled" | "disabled";
   /** Budget tokens for extended thinking (when mode is "enabled"). */
   thinkingBudgetTokens?: number;
-  /** Effort level: low, medium, high. Defaults to high. */
-  effort?: "low" | "medium" | "high";
+  /** Effort level. Defaults to high. "ultrathink" enables maximum reasoning depth. */
+  effort?: "low" | "medium" | "high" | "ultrathink";
   /** System prompt with structured XML instructions. */
   systemPrompt?: string;
   /** Session ID to resume from. */
   resumeSessionId?: string;
   /** Allowed tools for the agent. */
   allowedTools?: string[];
+  /** Settings sources to load. Defaults to ["project"]. */
+  settingSources?: Array<"project" | "user">;
+  /** Enable periodic AI-generated progress summaries (v0.2.76+). */
+  agentProgressSummaries?: boolean;
 }
 
 /** Structured XML input wrapper for reliable parsing. */
@@ -160,6 +164,8 @@ export async function createAgentSession(config: SessionTemplateConfig = {}) {
     systemPrompt,
     resumeSessionId,
     allowedTools,
+    settingSources = ["project"],
+    agentProgressSummaries,
   } = config;
 
   // Build thinking config based on mode
@@ -177,8 +183,10 @@ export async function createAgentSession(config: SessionTemplateConfig = {}) {
     maxBudgetUsd,
     thinking: thinkingConfig,
     effort,
+    settingSources,
     ...(systemPrompt ? { systemPrompt } : {}),
     ...(allowedTools ? { allowedTools } : {}),
+    ...(agentProgressSummaries !== undefined ? { agentProgressSummaries } : {}),
   };
 
   // Track turn count for context bloat prevention
@@ -191,13 +199,14 @@ export async function createAgentSession(config: SessionTemplateConfig = {}) {
 
     // Check if V2 is available
     if ("unstable_v2_createSession" in sdk) {
+      const sdkAny = sdk as unknown as Record<string, Function>;
       const createFn = resumeSessionId
-        ? (sdk as Record<string, Function>)["unstable_v2_resumeSession"]
-        : (sdk as Record<string, Function>)["unstable_v2_createSession"];
+        ? sdkAny["unstable_v2_resumeSession"]
+        : sdkAny["unstable_v2_createSession"];
 
       const session = resumeSessionId
-        ? createFn(resumeSessionId, sdkOptions)
-        : createFn(sdkOptions);
+        ? createFn!(resumeSessionId, sdkOptions)
+        : createFn!(sdkOptions);
 
       return {
         sessionId: sessionId ?? "pending",

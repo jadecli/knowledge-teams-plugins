@@ -54,6 +54,30 @@
           }
         ]
       }
+    ],
+    "PostCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/post-compact.sh",
+            "timeout": 15,
+            "statusMessage": "Restoring session state after compaction..."
+          }
+        ]
+      }
+    ],
+    "InstructionsLoaded": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"Instructions loaded: $CLAUDE_INSTRUCTIONS_FILE\" >> \"$CLAUDE_PROJECT_DIR\"/.claude/debug.log",
+            "timeout": 5,
+            "async": true
+          }
+        ]
+      }
     ]
   },
   "permissions": {

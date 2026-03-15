@@ -86,12 +86,13 @@ export interface SubtaskResult {
   output: string;
   /** How the subtask terminated. */
   exitReason:
-    | "success"           // Agent completed normally
-    | "error_max_turns"   // Hit turn limit
-    | "error_max_budget"  // Hit USD budget limit
-    | "error_timeout"     // Hit wall-clock timeout
-    | "error_dependency"  // A dependency failed
-    | "error_runtime";    // Unexpected error
+    | "success"                          // Agent completed normally
+    | "error_max_turns"                  // Hit turn limit
+    | "error_max_budget"                 // Hit USD budget limit
+    | "error_timeout"                    // Hit wall-clock timeout
+    | "error_dependency"                 // A dependency failed
+    | "error_runtime"                    // Unexpected error
+    | "error_structured_output_retries"; // Structured output validation failed (v0.2.76+)
   /** Actual cost incurred. */
   costUsd: number;
   /** Actual turns used. */
@@ -289,10 +290,11 @@ async function executeSubtask(subtask: Subtask): Promise<SubtaskResult> {
         maxTurns: subtask.budget.maxTurns,
         maxBudgetUsd: subtask.budget.maxBudgetUsd,
         permissionMode: "dontAsk",
+        settingSources: ["project"],
         systemPrompt: subtask.agent.prompt
-          ? { type: "custom", content: subtask.agent.prompt }
+          ? subtask.agent.prompt
           : { type: "preset", preset: "claude_code" },
-        abortSignal: controller.signal,
+        abortController: controller,
       },
     });
 
@@ -348,6 +350,16 @@ async function executeSubtask(subtask: Subtask): Promise<SubtaskResult> {
               result: 0,
               output,
               exitReason: "error_max_budget",
+              costUsd,
+              turnsUsed,
+              durationMs,
+            };
+          } else if (msg.subtype === "error_max_structured_output_retries") {
+            result = {
+              id: subtask.id,
+              result: 0,
+              output: `Structured output validation failed after max retries`,
+              exitReason: "error_structured_output_retries",
               costUsd,
               turnsUsed,
               durationMs,

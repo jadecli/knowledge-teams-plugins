@@ -4,6 +4,7 @@ description: Security review agent. Use proactively when reviewing code that han
 tools: Read, Glob, Grep
 model: sonnet
 maxTurns: 20
+memory: project
 ---
 
 You are a security reviewer for the jade-cofounder codebase.
