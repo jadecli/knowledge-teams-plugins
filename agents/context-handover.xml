@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Context Handover Manager — XML Agent File
+
+  Defines context transfer protocol between agents, subagents, and sessions.
+  Handles compaction boundaries, session resume, and artifact passing.
+
+  Semver type: agent-orchestration
+  Subtask type: context-management
+-->
+<agent-config xmlns="urn:jadecli:agents:v1">
+  <metadata>
+    <name>context-handover</name>
+    <version>0.1.0</version>
+    <semver-type>agent-orchestration</semver-type>
+    <description>Context transfer protocol for multi-agent handover and session continuity</description>
+  </metadata>
+
+  <!-- Handover techniques for different scenarios -->
+  <handover-techniques>
+
+    <!-- 1. Subagent → Parent: structured artifact return -->
+    <technique id="subagent-return">
+      <name>Subagent Artifact Return</name>
+      <trigger>SubagentStop hook event</trigger>
+      <protocol>
+        <step>Subagent completes with AgentOutput (totalDurationMs, totalTokens, usage)</step>
+        <step>Parent receives content[] text blocks as structured summary</step>
+        <step>Parent records SubagentOutputMetrics to SessionCostTracker</step>
+        <step>Parent continues with summarized context (not full subagent transcript)</step>
+      </protocol>
+      <cost-tracking>
+        <source>AgentOutput.usage</source>
+        <accumulate-to>SessionCostTracker</accumulate-to>
+      </cost-tracking>
+    </technique>
+
+    <!-- 2. Session → Session: resume with fork -->
+    <technique id="session-resume">
+      <name>Session Resume / Fork</name>
+      <trigger>query() with options.resume or options.forkSession</trigger>
+      <protocol>
+        <step>New query() call with resume=sessionId preserves full conversation</step>
+        <step>forkSession=true creates independent branch from resume point</step>
+        <step>Each query() call has independent total_cost_usd</step>
+        <step>SessionCostTracker accumulates across resumed calls</step>
+      </protocol>
+      <cost-tracking>
+        <source>SDKResultMessage per call</source>
+        <accumulate-to>SessionCostTracker (cross-call)</accumulate-to>
+      </cost-tracking>
+    </technique>
+
+    <!-- 3. Agent → Agent: compact boundary handover -->
+    <technique id="compact-boundary">
+      <name>Compaction Boundary Handover</name>
+      <trigger>SDKCompactBoundaryMessage (auto or manual /compact)</trigger>
+      <protocol>
+        <step>PreCompact hook fires with trigger and custom_instructions</step>
+        <step>Context is summarized preserving key decisions and artifacts</step>
+        <step>pre_tokens count captures context size before compaction</step>
+        <step>Post-compact context retains CLAUDE.md, tools, system prompt</step>
+      </protocol>
+      <cost-tracking>
+        <note>Compaction itself costs tokens (background summarization ~$0.04)</note>
+      </cost-tracking>
+    </technique>
+
+    <!-- 4. Task → Task: checkpoint-based continuity -->
+    <technique id="checkpoint-continuity">
+      <name>Checkpoint-Based Task Continuity</name>
+      <trigger>request-checkpoint WebMCP tool</trigger>
+      <protocol>
+        <step>Agent calls request-checkpoint with budgetUsed, summary</step>
+        <step>Checkpoint captures: task state, cost so far, artifacts produced</step>
+        <step>If budget extended: agent continues with fresh budget allocation</step>
+        <step>If budget denied: agent produces final summary and stops</step>
+      </protocol>
+      <cost-tracking>
+        <source>request-checkpoint.budgetUsed</source>
+        <accumulate-to>CostAwareTelemetryEvent</accumulate-to>
+      </cost-tracking>
+    </technique>
+  </handover-techniques>
+
+  <!-- Context preservation rules -->
+  <context-rules>
+    <rule>Always pass organizationId through handover boundaries</rule>
+    <rule>Always pass sessionId for cost correlation</rule>
+    <rule>Never transfer full tool call logs — summarize to findings</rule>
+    <rule>Preserve STO frontmatter (role, fitness_function, safety_research) across handovers</rule>
+    <rule>Track cumulative cost across all handover boundaries via SessionCostTracker</rule>
+  </context-rules>
+</agent-config>

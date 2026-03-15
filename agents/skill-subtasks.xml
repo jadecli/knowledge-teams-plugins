@@ -1,0 +1,279 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Skill-Based Subtask Registry — XML Agent File
+
+  Defines deterministic subtasks that can be composed into larger tasks.
+  Each subtask is tied to a semver "beach type" (document, code, data, etc.)
+  for versioning and capability discovery.
+
+  Upstream ref: anthropics/knowledge-work-plugins →
+    cowork-plugin-management/skills/cowork-plugin-customizer
+
+  Semver beach types:
+    doc     — Document fetch, parse, summarize (e.g., fetching a page)
+    code    — Code generation, review, refactor
+    data    — Data extraction, transformation, analysis
+    search  — Search, discovery, indexing
+    test    — Validation, assertion, verification
+    deploy  — Build, publish, release
+    config  — Configuration, setup, environment
+    comm    — Communication, notification, reporting
+-->
+<agent-config xmlns="urn:jadecli:agents:v1">
+  <metadata>
+    <name>skill-subtasks</name>
+    <version>0.1.0</version>
+    <semver-type>subtask-registry</semver-type>
+    <description>Deterministic skill-based subtasks with semver beach types</description>
+  </metadata>
+
+  <!-- Semver beach type definitions -->
+  <beach-types>
+    <type id="doc" version="0.1.0" description="Document operations: fetch, parse, summarize, convert" />
+    <type id="code" version="0.1.0" description="Code operations: generate, review, refactor, audit" />
+    <type id="data" version="0.1.0" description="Data operations: extract, transform, analyze, aggregate" />
+    <type id="search" version="0.1.0" description="Search operations: discover, index, query, rank" />
+    <type id="test" version="0.1.0" description="Test operations: validate, assert, verify, benchmark" />
+    <type id="deploy" version="0.1.0" description="Deploy operations: build, publish, release, rollback" />
+    <type id="config" version="0.1.0" description="Config operations: setup, environment, secrets, MCP" />
+    <type id="comm" version="0.1.0" description="Communication: notify, report, summarize, handover" />
+  </beach-types>
+
+  <!-- Deterministic subtask definitions -->
+  <subtasks>
+
+    <!-- ─── doc beach type ────────────────────────────────────────────── -->
+
+    <subtask id="fetch-page" beach-type="doc" version="0.1.0">
+      <name>Fetch Page</name>
+      <description>Fetch a web page and convert to markdown for LLM consumption</description>
+      <tools>
+        <tool>WebFetch</tool>
+      </tools>
+      <mcp-servers>
+        <server>fetch</server>
+      </mcp-servers>
+      <input-schema>
+        <field name="url" type="string" required="true" />
+        <field name="prompt" type="string" required="false" />
+      </input-schema>
+      <output-schema>
+        <field name="content" type="string" description="Markdown content" />
+        <field name="metadata" type="object" description="Title, URL, fetch time" />
+      </output-schema>
+      <cost-estimate model="claude-haiku-4-5" max-tokens="4000" />
+    </subtask>
+
+    <subtask id="summarize-document" beach-type="doc" version="0.1.0">
+      <name>Summarize Document</name>
+      <description>Produce a structured summary of a document or file</description>
+      <tools>
+        <tool>Read</tool>
+      </tools>
+      <input-schema>
+        <field name="file_path" type="string" required="true" />
+        <field name="focus" type="string" required="false" description="What to focus on" />
+      </input-schema>
+      <output-schema>
+        <field name="summary" type="string" />
+        <field name="key_points" type="string[]" />
+        <field name="word_count" type="number" />
+      </output-schema>
+      <cost-estimate model="claude-sonnet-4-6" max-tokens="2000" />
+    </subtask>
+
+    <!-- ─── code beach type ───────────────────────────────────────────── -->
+
+    <subtask id="review-code" beach-type="code" version="0.1.0">
+      <name>Review Code</name>
+      <description>Analyze code for issues, patterns, and improvements</description>
+      <tools>
+        <tool>Read</tool>
+        <tool>Glob</tool>
+        <tool>Grep</tool>
+      </tools>
+      <input-schema>
+        <field name="paths" type="string[]" required="true" />
+        <field name="focus" type="string" required="false" description="Review focus area" />
+      </input-schema>
+      <output-schema>
+        <field name="findings" type="object[]" description="Issue type, severity, location, suggestion" />
+        <field name="summary" type="string" />
+      </output-schema>
+      <cost-estimate model="claude-sonnet-4-6" max-tokens="8000" />
+    </subtask>
+
+    <subtask id="generate-types" beach-type="code" version="0.1.0">
+      <name>Generate TypeScript Types</name>
+      <description>Generate TypeScript interfaces from API responses or schemas</description>
+      <tools>
+        <tool>Read</tool>
+        <tool>Write</tool>
+      </tools>
+      <input-schema>
+        <field name="source" type="string" required="true" description="API doc URL or schema file" />
+        <field name="output_path" type="string" required="true" />
+      </input-schema>
+      <output-schema>
+        <field name="types_generated" type="number" />
+        <field name="file_path" type="string" />
+      </output-schema>
+      <cost-estimate model="claude-sonnet-4-6" max-tokens="4000" />
+    </subtask>
+
+    <!-- ─── data beach type ───────────────────────────────────────────── -->
+
+    <subtask id="extract-metrics" beach-type="data" version="0.1.0">
+      <name>Extract Cost Metrics</name>
+      <description>Extract cost and usage metrics from API responses or telemetry</description>
+      <tools>
+        <tool>Bash</tool>
+        <tool>Read</tool>
+      </tools>
+      <mcp-servers>
+        <server>postgres</server>
+      </mcp-servers>
+      <input-schema>
+        <field name="source" type="string" required="true" description="API endpoint or file" />
+        <field name="organization_id" type="string" required="false" />
+        <field name="date_range" type="object" required="false" />
+      </input-schema>
+      <output-schema>
+        <field name="metrics" type="object" description="Extracted cost/usage data" />
+        <field name="source_type" type="string" />
+      </output-schema>
+      <cost-estimate model="claude-haiku-4-5" max-tokens="2000" />
+    </subtask>
+
+    <!-- ─── search beach type ─────────────────────────────────────────── -->
+
+    <subtask id="search-codebase" beach-type="search" version="0.1.0">
+      <name>Search Codebase</name>
+      <description>Search for patterns, symbols, or concepts across a codebase</description>
+      <tools>
+        <tool>Glob</tool>
+        <tool>Grep</tool>
+        <tool>Read</tool>
+      </tools>
+      <input-schema>
+        <field name="query" type="string" required="true" />
+        <field name="file_patterns" type="string[]" required="false" />
+      </input-schema>
+      <output-schema>
+        <field name="matches" type="object[]" description="File, line, context" />
+        <field name="total_matches" type="number" />
+      </output-schema>
+      <cost-estimate model="claude-haiku-4-5" max-tokens="1000" />
+    </subtask>
+
+    <subtask id="discover-mcp" beach-type="search" version="0.1.0">
+      <name>Discover MCP Servers</name>
+      <description>Search MCP registry for servers matching a category or keyword</description>
+      <tools>
+        <tool>WebSearch</tool>
+        <tool>WebFetch</tool>
+      </tools>
+      <input-schema>
+        <field name="category" type="string" required="false" />
+        <field name="query" type="string" required="false" />
+      </input-schema>
+      <output-schema>
+        <field name="servers" type="object[]" description="Name, package, description, category" />
+      </output-schema>
+      <cost-estimate model="claude-haiku-4-5" max-tokens="2000" />
+    </subtask>
+
+    <!-- ─── test beach type ───────────────────────────────────────────── -->
+
+    <subtask id="run-tests" beach-type="test" version="0.1.0">
+      <name>Run Test Suite</name>
+      <description>Execute test suite and report results</description>
+      <tools>
+        <tool>Bash</tool>
+      </tools>
+      <input-schema>
+        <field name="command" type="string" required="false" description="Test command (default: npm test)" />
+        <field name="filter" type="string" required="false" description="Test file/pattern filter" />
+      </input-schema>
+      <output-schema>
+        <field name="passed" type="number" />
+        <field name="failed" type="number" />
+        <field name="failures" type="object[]" />
+        <field name="duration_ms" type="number" />
+      </output-schema>
+      <cost-estimate model="claude-haiku-4-5" max-tokens="500" />
+    </subtask>
+
+    <!-- ─── config beach type ─────────────────────────────────────────── -->
+
+    <subtask id="setup-mcp-server" beach-type="config" version="0.1.0">
+      <name>Setup MCP Server</name>
+      <description>Configure an MCP server in the project's .claude/settings.json or mcpServers</description>
+      <tools>
+        <tool>Read</tool>
+        <tool>Edit</tool>
+        <tool>Bash</tool>
+      </tools>
+      <input-schema>
+        <field name="server_id" type="string" required="true" description="MCP server ID from registry" />
+        <field name="env_vars" type="object" required="false" description="Environment variables" />
+      </input-schema>
+      <output-schema>
+        <field name="configured" type="boolean" />
+        <field name="config_path" type="string" />
+      </output-schema>
+      <cost-estimate model="claude-haiku-4-5" max-tokens="1000" />
+    </subtask>
+
+    <subtask id="pin-package-versions" beach-type="config" version="0.1.0">
+      <name>Pin Package Versions</name>
+      <description>Update package.json with pinned versions from sdk-package-registry</description>
+      <tools>
+        <tool>Read</tool>
+        <tool>Edit</tool>
+        <tool>Bash</tool>
+      </tools>
+      <input-schema>
+        <field name="scope" type="string" required="false" description="Package scope to pin" />
+      </input-schema>
+      <output-schema>
+        <field name="packages_pinned" type="number" />
+        <field name="packages" type="object[]" />
+      </output-schema>
+      <cost-estimate model="claude-haiku-4-5" max-tokens="500" />
+    </subtask>
+
+    <!-- ─── comm beach type ───────────────────────────────────────────── -->
+
+    <subtask id="generate-cost-report" beach-type="comm" version="0.1.0">
+      <name>Generate Cost Report</name>
+      <description>Generate a cost report from SessionCostTracker or Admin API data</description>
+      <tools>
+        <tool>Read</tool>
+        <tool>Bash</tool>
+      </tools>
+      <input-schema>
+        <field name="organization_id" type="string" required="true" />
+        <field name="date_range" type="object" required="false" />
+        <field name="format" type="string" required="false" description="json | markdown | csv" />
+      </input-schema>
+      <output-schema>
+        <field name="report" type="string" />
+        <field name="total_cost_usd" type="number" />
+        <field name="model_breakdown" type="object" />
+      </output-schema>
+      <cost-estimate model="claude-sonnet-4-6" max-tokens="4000" />
+    </subtask>
+
+  </subtasks>
+
+  <!-- Subtask composition rules -->
+  <composition-rules>
+    <rule>Subtasks are atomic — they complete fully or fail with error</rule>
+    <rule>Each subtask has a beach-type semver for independent versioning</rule>
+    <rule>Subtasks can be composed sequentially or spawned as parallel subagents</rule>
+    <rule>Cost estimates use the cheapest viable model (prefer haiku for simple tasks)</rule>
+    <rule>All subtask outputs feed into CostAwareTelemetryEvent for tracking</rule>
+    <rule>doc beach-type subtasks should be used for any web page fetch (canonical)</rule>
+  </composition-rules>
+</agent-config>
