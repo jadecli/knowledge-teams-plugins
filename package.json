@@ -12,6 +12,7 @@
     "db:generate": "drizzle-kit generate",
     "db:studio": "drizzle-kit studio",
     "llms:sync": "tsx lib/llms-sync.ts",
+    "blog:sync": "tsx lib/blog-sync.ts",
     "pr:manifest": "tsx scripts/pr-manifest.ts",
     "setup:verify": "tsx scripts/setup/verify-env.ts"
   },

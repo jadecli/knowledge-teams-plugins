@@ -108,6 +108,25 @@ export const factOrgUsage = pgTable("fact_org_usage", {
 
 // ─── Metadata Tables ────────────────────────────────────────────────────────
 
+/** Metadata: cached customer blog posts from claude.com/customers/* */
+export const metaBlogCache = pgTable(
+  "meta_blog_cache",
+  {
+    id: serial("id").primaryKey(),
+    url: text("url").notNull(),
+    /** URL slug (e.g. "stripe", "figma") */
+    slug: text("slug").notNull(),
+    contentHash: text("content_hash").notNull(),
+    content: text("content").notNull(),
+    lastCrawled: timestamp("last_crawled").defaultNow(),
+    /** Company name from manifest */
+    company: text("company"),
+    /** Classification tags (JSON array) */
+    tags: jsonb("tags"),
+  },
+  (table) => [uniqueIndex("meta_blog_cache_url_idx").on(table.url)],
+);
+
 /** Metadata: cached llms.txt documents */
 export const metaDocCache = pgTable(
   "meta_doc_cache",
