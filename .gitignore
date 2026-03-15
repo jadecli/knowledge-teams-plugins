@@ -12,3 +12,4 @@ dist/
 .claude/session-context.md
 .claude/jade-loop.local.md
 .claude/settings.local.json
+.claude/debug.log
