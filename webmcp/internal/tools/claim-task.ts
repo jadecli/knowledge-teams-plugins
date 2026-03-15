@@ -9,11 +9,19 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 
+interface ClaimTaskResult {
+  taskId: string;
+  claimedBy: string;
+  role: string;
+  claimedAt: string;
+  success: boolean;
+}
+
 export const claimTask = {
   name: "claim-task",
   description: "Claim an unassigned task for execution by this agent",
   inputSchema,
-  handler: async (input: Input) => {
+  handler: async (input: Input): Promise<ClaimTaskResult> => {
     // Stub: would call jadecli.app task claim endpoint
     return {
       taskId: input.taskId,

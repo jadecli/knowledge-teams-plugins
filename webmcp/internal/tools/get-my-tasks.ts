@@ -8,11 +8,17 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 
+interface GetMyTasksResult {
+  agentId: string;
+  tasks: unknown[];
+  filter: string;
+}
+
 export const getMyTasks = {
   name: "get-my-tasks",
   description: "Retrieve tasks assigned to the calling agent, filtered by status",
   inputSchema,
-  handler: async (input: Input) => {
+  handler: async (input: Input): Promise<GetMyTasksResult> => {
     // Stub: would query jadecli.app task API
     return {
       agentId: input.agentId,

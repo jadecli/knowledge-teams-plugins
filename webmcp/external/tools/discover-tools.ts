@@ -9,11 +9,18 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 
+interface DiscoverToolsResult {
+  tools: unknown[];
+  total: number;
+  query: string | undefined;
+  category: string | undefined;
+}
+
 export const discoverTools = {
   name: "discover-tools",
   description: "Discover available tools in the jadecli.com marketplace",
   inputSchema,
-  handler: async (input: Input) => {
+  handler: async (input: Input): Promise<DiscoverToolsResult> => {
     // Stub: would query jadecli.com marketplace API
     return {
       tools: [],

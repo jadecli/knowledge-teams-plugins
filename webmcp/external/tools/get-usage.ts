@@ -8,11 +8,19 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 
+interface GetUsageResult {
+  toolName: string;
+  period: string;
+  invocations: number;
+  uniqueAgents: number;
+  avgDurationMs: number;
+}
+
 export const getUsage = {
   name: "get-usage",
   description: "Get usage statistics for marketplace tools",
   inputSchema,
-  handler: async (input: Input) => {
+  handler: async (input: Input): Promise<GetUsageResult> => {
     // Stub: would query jadecli.com usage analytics
     return {
       toolName: input.toolName ?? "all",

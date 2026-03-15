@@ -1,19 +1,24 @@
-import { readFileSync, existsSync, readdirSync, statSync } from "fs";
-import { join, resolve } from "path";
+import { readFileSync, readdirSync } from "fs";
+import { join } from "path";
+import { z } from "zod";
 
-export interface UpstreamRef {
-  repo: string;
-  commit: string;
-  syncedAt: string;
-}
+const UpstreamRefSchema = z.object({
+  repo: z.string(),
+  commit: z.string(),
+  syncedAt: z.string(),
+});
 
-export interface PluginManifest {
-  name: string;
-  version?: string;
-  description?: string;
-  skills?: string[];
-  commands?: string[];
-}
+export type UpstreamRef = z.infer<typeof UpstreamRefSchema>;
+
+const PluginManifestSchema = z.object({
+  name: z.string(),
+  version: z.string().optional(),
+  description: z.string().optional(),
+  skills: z.array(z.string()).optional(),
+  commands: z.array(z.string()).optional(),
+});
+
+export type PluginManifest = z.infer<typeof PluginManifestSchema>;
 
 export interface LoadedPlugin {
   source: "upstream" | "jade";
@@ -29,11 +34,13 @@ export interface LoadedPlugin {
  */
 export function loadUpstreamRef(rootDir: string): UpstreamRef {
   const refPath = join(rootDir, "upstream-ref.json");
-  if (!existsSync(refPath)) {
+  let raw: string;
+  try {
+    raw = readFileSync(refPath, "utf-8");
+  } catch {
     throw new Error(`upstream-ref.json not found at ${refPath}`);
   }
-  const raw = readFileSync(refPath, "utf-8");
-  return JSON.parse(raw) as UpstreamRef;
+  return UpstreamRefSchema.parse(JSON.parse(raw));
 }
 
 /**
@@ -41,19 +48,25 @@ export function loadUpstreamRef(rootDir: string): UpstreamRef {
  * Each subdirectory with a plugin.json or skills/ folder is treated as a plugin.
  */
 export function scanPluginDir(dir: string, source: "upstream" | "jade"): LoadedPlugin[] {
-  if (!existsSync(dir)) return [];
+  let entries: import("fs").Dirent[];
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return [];
+  }
 
   const plugins: LoadedPlugin[] = [];
-  const entries = readdirSync(dir);
 
   for (const entry of entries) {
-    const fullPath = join(dir, entry);
-    if (!statSync(fullPath).isDirectory()) continue;
+    if (!entry.isDirectory()) continue;
+    const fullPath = join(dir, entry.name);
 
-    const manifestPath = join(fullPath, "plugin.json");
     let manifest: PluginManifest | null = null;
-    if (existsSync(manifestPath)) {
-      manifest = JSON.parse(readFileSync(manifestPath, "utf-8")) as PluginManifest;
+    try {
+      const manifestRaw = readFileSync(join(fullPath, "plugin.json"), "utf-8");
+      manifest = PluginManifestSchema.parse(JSON.parse(manifestRaw));
+    } catch {
+      // No plugin.json or invalid — that's fine
     }
 
     const skills = collectMarkdownFiles(join(fullPath, "skills"));
@@ -61,7 +74,7 @@ export function scanPluginDir(dir: string, source: "upstream" | "jade"): LoadedP
 
     plugins.push({
       source,
-      name: entry,
+      name: entry.name,
       basePath: fullPath,
       manifest,
       skills,
@@ -76,10 +89,13 @@ export function scanPluginDir(dir: string, source: "upstream" | "jade"): LoadedP
  * Collect .md files from a directory (non-recursive).
  */
 function collectMarkdownFiles(dir: string): string[] {
-  if (!existsSync(dir)) return [];
-  return readdirSync(dir)
-    .filter((f) => f.endsWith(".md"))
-    .map((f) => join(dir, f));
+  try {
+    return readdirSync(dir)
+      .filter((f: string) => f.endsWith(".md"))
+      .map((f: string) => join(dir, f));
+  } catch {
+    return [];
+  }
 }
 
 /**

@@ -9,11 +9,18 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 
+interface InvokeToolResult {
+  toolName: string;
+  status: string;
+  result: null;
+  invokedAt: string;
+}
+
 export const invokeTool = {
   name: "invoke-tool",
   description: "Invoke a marketplace tool with the given input parameters",
   inputSchema,
-  handler: async (input: Input) => {
+  handler: async (input: Input): Promise<InvokeToolResult> => {
     // Stub: would proxy to the actual tool execution endpoint
     return {
       toolName: input.toolName,

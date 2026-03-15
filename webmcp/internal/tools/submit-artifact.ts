@@ -14,11 +14,19 @@ const inputSchema = z.object({
 
 type Input = z.infer<typeof inputSchema>;
 
+interface SubmitArtifactResult {
+  taskId: string;
+  artifactId: string;
+  type: string;
+  submittedAt: string;
+  accepted: boolean;
+}
+
 export const submitArtifact = {
   name: "submit-artifact",
   description: "Submit a completed artifact for a task, with provenance metadata",
   inputSchema,
-  handler: async (input: Input) => {
+  handler: async (input: Input): Promise<SubmitArtifactResult> => {
     // Stub: would POST to jadecli.app artifact store
     return {
       taskId: input.taskId,
