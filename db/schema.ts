@@ -108,6 +108,30 @@ export const factOrgUsage = pgTable("fact_org_usage", {
 
 // ─── Metadata Tables ────────────────────────────────────────────────────────
 
+/** Metadata: cached customer blog post content (raw fact JSON) */
+export const metaBlogCache = pgTable(
+  "meta_blog_cache",
+  {
+    id: serial("id").primaryKey(),
+    slug: text("slug").notNull(),
+    url: text("url").notNull(),
+    title: text("title").notNull(),
+    contentHash: text("content_hash").notNull(),
+    /** Raw HTML or extracted markdown content */
+    content: text("content").notNull(),
+    /** Structured fact data extracted from the blog post */
+    factJson: jsonb("fact_json"),
+    lastCrawled: timestamp("last_crawled").defaultNow(),
+    /** HTTP status code from last crawl attempt */
+    httpStatus: integer("http_status"),
+    crawlDurationMs: integer("crawl_duration_ms"),
+  },
+  (table) => [
+    uniqueIndex("meta_blog_cache_slug_idx").on(table.slug),
+    uniqueIndex("meta_blog_cache_url_idx").on(table.url),
+  ],
+);
+
 /** Metadata: cached llms.txt documents */
 export const metaDocCache = pgTable(
   "meta_doc_cache",
