@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RawFact",
+  "description": "Canonical schema for raw fact data captured by crawl pipelines",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "factId",
+    "source_url",
+    "crawled_at",
+    "crawler_name",
+    "crawl_run_id",
+    "title",
+    "content_raw",
+    "customer_context"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "string",
+      "const": "1.0.0",
+      "description": "Schema version for compatibility tracking"
+    },
+    "factId": {
+      "type": "string",
+      "description": "Unique identifier: {crawler_name}-{source_slug}-{crawled_at}"
+    },
+    "source_url": {
+      "type": "string",
+      "format": "uri",
+      "description": "Original URL the fact was crawled from"
+    },
+    "crawled_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp of when the crawl occurred"
+    },
+    "crawler_name": {
+      "type": "string",
+      "description": "Identifier of the crawler that produced this fact"
+    },
+    "crawl_run_id": {
+      "type": "string",
+      "description": "Dedup key: {crawler-name}-{ISO-timestamp}"
+    },
+    "title": {
+      "type": "string",
+      "description": "Page title or headline extracted from source"
+    },
+    "content_raw": {
+      "type": "string",
+      "description": "Full text content extracted from the source (markdown or plain text)"
+    },
+    "customer_context": {
+      "type": "object",
+      "description": "Structured context for future test simulation",
+      "required": ["company", "industry", "use_case_summary"],
+      "properties": {
+        "company": {
+          "type": "string",
+          "description": "Company name"
+        },
+        "industry": {
+          "type": "string",
+          "description": "Primary industry vertical"
+        },
+        "use_case_summary": {
+          "type": "string",
+          "description": "One-paragraph summary of how the customer uses Claude"
+        },
+        "technologies_mentioned": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Technologies, APIs, and products referenced"
+        },
+        "quantitative_claims": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Measurable outcomes cited (e.g., '87% reduction in support time')"
+        }
+      }
+    },
+    "extensions": {
+      "type": "object",
+      "description": "Crawler-specific fields (not part of base schema)",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": false
+}
