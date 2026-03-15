@@ -31,8 +31,8 @@ export interface SessionTemplateConfig {
   thinking?: "adaptive" | "enabled" | "disabled";
   /** Budget tokens for extended thinking (when mode is "enabled"). */
   thinkingBudgetTokens?: number;
-  /** Effort level. Defaults to high. "ultrathink" enables maximum reasoning depth. */
-  effort?: "low" | "medium" | "high" | "ultrathink";
+  /** Effort level. Defaults to high. "max" enables maximum reasoning depth (Opus 4.6 only). */
+  effort?: "low" | "medium" | "high" | "max";
   /** System prompt with structured XML instructions. */
   systemPrompt?: string;
   /** Session ID to resume from. */
@@ -55,6 +55,15 @@ export interface StructuredInput {
   outputFormat?: string;
   /** Constraints or rules to follow. */
   constraints?: string[];
+}
+
+/** Handle returned by createAgentSession(). */
+export interface AgentSessionHandle {
+  sessionId: string;
+  currentTurn: number;
+  send(input: StructuredInput): Promise<StructuredOutput>;
+  getSessionId(): string | undefined;
+  close(): void;
 }
 
 /** Parsed structured output from agent responses. */
@@ -153,7 +162,7 @@ export function parseStructuredOutput(
  * await session.close();
  * ```
  */
-export async function createAgentSession(config: SessionTemplateConfig = {}) {
+export async function createAgentSession(config: SessionTemplateConfig = {}): Promise<AgentSessionHandle> {
   const {
     model = "claude-opus-4-6",
     maxTurns = 30,
@@ -199,14 +208,18 @@ export async function createAgentSession(config: SessionTemplateConfig = {}) {
 
     // Check if V2 is available
     if ("unstable_v2_createSession" in sdk) {
-      const sdkAny = sdk as unknown as Record<string, Function>;
-      const createFn = resumeSessionId
-        ? sdkAny["unstable_v2_resumeSession"]
-        : sdkAny["unstable_v2_createSession"];
+      const fnName = resumeSessionId
+        ? "unstable_v2_resumeSession"
+        : "unstable_v2_createSession";
+      const createFn = (sdk as Record<string, unknown>)[fnName];
+
+      if (typeof createFn !== "function") {
+        throw new Error(`Agent SDK V2 method '${fnName}' not available. Ensure @anthropic-ai/claude-agent-sdk@0.2.76+ is installed.`);
+      }
 
       const session = resumeSessionId
-        ? createFn!(resumeSessionId, sdkOptions)
-        : createFn!(sdkOptions);
+        ? createFn(resumeSessionId, sdkOptions)
+        : createFn(sdkOptions);
 
       return {
         sessionId: sessionId ?? "pending",
@@ -232,14 +245,7 @@ export async function createAgentSession(config: SessionTemplateConfig = {}) {
             if (!sessionId) {
               sessionId = (msg as SDKMessage).session_id;
             }
-            if ((msg as SDKMessage).type === "assistant") {
-              const assistantMsg = msg as SDKMessage & { message: { content: Array<{ type: string; text?: string }> } };
-              const text = assistantMsg.message.content
-                .filter((block) => block.type === "text")
-                .map((block) => block.text ?? "")
-                .join("");
-              fullText += text;
-            }
+            fullText += extractTextContent(msg as SDKMessage);
           }
 
           return parseStructuredOutput(fullText, currentTurn);
@@ -273,10 +279,10 @@ export async function createAgentSession(config: SessionTemplateConfig = {}) {
  * V1 fallback using query() async generator pattern.
  */
 function createV1FallbackSession(
-  sdk: Record<string, Function>,
+  sdk: Record<string, unknown>,
   options: Record<string, unknown>,
   maxTurns: number
-) {
+): AgentSessionHandle {
   let currentTurn = 0;
   let sessionId: string | undefined;
 
@@ -311,14 +317,7 @@ function createV1FallbackSession(
         if (!sessionId && msg.session_id) {
           sessionId = msg.session_id;
         }
-        if (msg.type === "assistant") {
-          const assistantMsg = msg as SDKMessage & { message: { content: Array<{ type: string; text?: string }> } };
-          const text = assistantMsg.message.content
-            .filter((block) => block.type === "text")
-            .map((block) => block.text ?? "")
-            .join("");
-          fullText += text;
-        }
+        fullText += extractTextContent(msg);
       }
 
       return parseStructuredOutput(fullText, currentTurn);
@@ -332,6 +331,19 @@ function createV1FallbackSession(
       // V1 sessions are closed when the generator completes
     },
   };
+}
+
+// ── Message Helpers ─────────────────────────────────────────────────────────
+
+/** Extract text content from an SDK assistant message. */
+function extractTextContent(msg: SDKMessage): string {
+  if (msg.type !== "assistant") return "";
+  const content = (msg as SDKMessage & { message: { content: Array<{ type: string; text?: string }> } }).message?.content;
+  if (!Array.isArray(content)) return "";
+  return content
+    .filter((block) => block.type === "text")
+    .map((block) => block.text ?? "")
+    .join("");
 }
 
 // ── XML Escape Utilities ────────────────────────────────────────────────────

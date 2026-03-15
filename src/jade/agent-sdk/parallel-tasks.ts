@@ -324,57 +324,27 @@ async function executeSubtask(subtask: Subtask): Promise<SubtaskResult> {
           const turnsUsed =
             "num_turns" in msg ? (msg.num_turns as number) : 0;
 
-          if (msg.subtype === "success") {
-            result = {
-              id: subtask.id,
-              result: 1,
-              output,
-              exitReason: "success",
-              costUsd,
-              turnsUsed,
-              durationMs,
-            };
-          } else if (msg.subtype === "error_max_turns") {
-            result = {
-              id: subtask.id,
-              result: 0,
-              output,
-              exitReason: "error_max_turns",
-              costUsd,
-              turnsUsed,
-              durationMs,
-            };
-          } else if (msg.subtype === "error_max_budget_usd") {
-            result = {
-              id: subtask.id,
-              result: 0,
-              output,
-              exitReason: "error_max_budget",
-              costUsd,
-              turnsUsed,
-              durationMs,
-            };
-          } else if (msg.subtype === "error_max_structured_output_retries") {
-            result = {
-              id: subtask.id,
-              result: 0,
-              output: `Structured output validation failed after max retries`,
+          // Map SDK subtype to our exit reason and binary result
+          const subtypeMap: Record<string, { exitReason: SubtaskResult["exitReason"]; outputOverride?: string }> = {
+            success: { exitReason: "success" },
+            error_max_turns: { exitReason: "error_max_turns" },
+            error_max_budget_usd: { exitReason: "error_max_budget" },
+            error_max_structured_output_retries: {
               exitReason: "error_structured_output_retries",
-              costUsd,
-              turnsUsed,
-              durationMs,
-            };
-          } else {
-            result = {
-              id: subtask.id,
-              result: 0,
-              output: `Agent error: ${msg.subtype}`,
-              exitReason: "error_runtime",
-              costUsd,
-              turnsUsed,
-              durationMs,
-            };
-          }
+              outputOverride: "Structured output validation failed after max retries",
+            },
+          };
+
+          const mapped = subtypeMap[msg.subtype];
+          result = {
+            id: subtask.id,
+            result: msg.subtype === "success" ? 1 : 0,
+            output: mapped?.outputOverride ?? (mapped ? output : `Agent error: ${msg.subtype}`),
+            exitReason: mapped?.exitReason ?? "error_runtime",
+            costUsd,
+            turnsUsed,
+            durationMs,
+          };
           break;
         }
       }
@@ -383,7 +353,7 @@ async function executeSubtask(subtask: Subtask): Promise<SubtaskResult> {
     return (
       result ?? {
         id: subtask.id,
-        result: controller.signal.aborted ? 0 : 0,
+        result: 0 as BinaryResult,
         output: controller.signal.aborted
           ? `Timeout after ${subtask.budget.timeoutMs}ms`
           : output,

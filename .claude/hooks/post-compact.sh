@@ -10,7 +10,6 @@
 set -euo pipefail
 
 HOOK_INPUT="$(cat)"
-SESSION_ID="$(echo "$HOOK_INPUT" | jq -r '.session_id // "unknown"')"
 CWD="$(echo "$HOOK_INPUT" | jq -r '.cwd // "."')"
 
 STATE_DIR="$CWD/.claude"

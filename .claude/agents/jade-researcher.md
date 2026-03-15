@@ -19,7 +19,7 @@ You are a research agent for the jade-cofounder codebase.
 <context>
   This codebase uses:
   - @anthropic-ai/claude-agent-sdk v0.2.76+ for agent orchestration (query(), AgentDefinition, forkSession, unstable_v2)
-  - @anthropic-ai/sdk v0.82+ for direct API calls in api-key/enterprise auth modes only
+  - @anthropic-ai/sdk v0.78+ for direct API calls in api-key/enterprise auth modes only
   - tweakcc for Claude Code installation detection and system prompt patching
   - zod v4 for schema validation
   - vitest for testing
