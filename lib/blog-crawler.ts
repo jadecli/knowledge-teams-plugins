@@ -30,12 +30,8 @@ const ALLOWED_BLOG_PREFIX = "https://www.anthropic.com/customers/" as const;
 /** Security boundary: only crawl anthropic.com customer blog posts. */
 export function isAllowedBlogUrl(url: string): boolean {
   try {
-    const parsed = new URL(url);
-    return (
-      parsed.protocol === "https:" &&
-      parsed.hostname === "www.anthropic.com" &&
-      parsed.pathname.startsWith("/customers/")
-    );
+    new URL(url); // validate URL format
+    return url.startsWith(ALLOWED_BLOG_PREFIX);
   } catch {
     return false;
   }
@@ -92,10 +88,9 @@ export async function crawlBlogBatch(
   concurrency: number = 5,
 ): Promise<BlogCrawlResult[]> {
   const results: BlogCrawlResult[] = [];
-  const queue = [...entries];
 
-  while (queue.length > 0) {
-    const batch = queue.splice(0, concurrency);
+  for (let i = 0; i < entries.length; i += concurrency) {
+    const batch = entries.slice(i, i + concurrency);
     const batchResults = await Promise.allSettled(
       batch.map((entry) =>
         crawlBlogPost(

@@ -18,7 +18,7 @@ export interface BlogEntry {
 
 // ─── Manifest ───────────────────────────────────────────────────────────────
 
-/** All 188 Anthropic customer blog posts. */
+/** All Anthropic customer blog posts. */
 export const BLOG_MANIFEST: readonly BlogEntry[] = [
   { slug: "attention", title: "Attention automates sales operations and accelerates revenue with Claude", url: "https://www.anthropic.com/customers/attention" },
   { slug: "stripe", title: "Stripe deploys Claude Code to 1,370 engineers with zero-configuration enterprise rollout", url: "https://www.anthropic.com/customers/stripe" },

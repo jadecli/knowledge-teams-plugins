@@ -5,7 +5,6 @@
  * Entry point for both programmatic use and CLI (npm run blog:sync).
  */
 
-import { eq } from "drizzle-orm";
 import { BLOG_MANIFEST } from "./blog-manifest.js";
 import { crawlBlogBatch, type BlogCrawlResult } from "./blog-crawler.js";
 import { hasDatabase, getDb } from "../db/client.js";
@@ -39,22 +38,12 @@ async function loadKnownHashes(): Promise<Map<string, string>> {
   return hashes;
 }
 
-/** Upsert a crawled blog post into the cache. */
+/** Upsert a crawled blog post into the cache. Atomic single-query operation. */
 async function upsertBlogCache(result: BlogCrawlResult): Promise<void> {
   if (!hasDatabase()) return;
 
   const db = getDb();
-  const existing = await db
-    .select({ id: metaBlogCache.id })
-    .from(metaBlogCache)
-    .where(eq(metaBlogCache.slug, result.slug))
-    .limit(1);
-
-  if (existing.length > 0) {
-    await db.delete(metaBlogCache).where(eq(metaBlogCache.slug, result.slug));
-  }
-
-  await db.insert(metaBlogCache).values({
+  const values = {
     slug: result.slug,
     url: result.url,
     title: result.title,
@@ -63,12 +52,20 @@ async function upsertBlogCache(result: BlogCrawlResult): Promise<void> {
     lastCrawled: new Date(),
     httpStatus: result.httpStatus,
     crawlDurationMs: result.crawlDurationMs,
-  });
+  };
+
+  await db
+    .insert(metaBlogCache)
+    .values(values)
+    .onConflictDoUpdate({
+      target: metaBlogCache.slug,
+      set: values,
+    });
 }
 
 // ─── Sync ───────────────────────────────────────────────────────────────────
 
-/** Crawl all 188 blog posts, compare hashes, update cache where changed. */
+/** Crawl all blog posts, compare hashes, update cache where changed. */
 export async function syncBlogs(
   concurrency: number = 5,
 ): Promise<BlogSyncReport> {

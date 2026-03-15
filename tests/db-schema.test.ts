@@ -5,6 +5,7 @@ import {
   dimSessions,
   factToolCalls,
   factOrgUsage,
+  metaBlogCache,
   metaDocCache,
 } from "../db/schema.js";
 
@@ -50,6 +51,18 @@ describe("db/schema — Kimball dimensional model", () => {
     expect(factOrgUsage.cacheReadTokens).toBeDefined();
     expect(factOrgUsage.cacheCreationTokens).toBeDefined();
     expect(factOrgUsage.model).toBeDefined();
+  });
+
+  it("meta_blog_cache has expected columns", () => {
+    expect(metaBlogCache.slug).toBeDefined();
+    expect(metaBlogCache.url).toBeDefined();
+    expect(metaBlogCache.title).toBeDefined();
+    expect(metaBlogCache.contentHash).toBeDefined();
+    expect(metaBlogCache.content).toBeDefined();
+    expect(metaBlogCache.factJson).toBeDefined();
+    expect(metaBlogCache.lastCrawled).toBeDefined();
+    expect(metaBlogCache.httpStatus).toBeDefined();
+    expect(metaBlogCache.crawlDurationMs).toBeDefined();
   });
 
   it("meta_doc_cache has url, hash, and content", () => {
