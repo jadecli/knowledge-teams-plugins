@@ -18,13 +18,13 @@
     "setup:verify": "tsx scripts/setup/verify-env.ts"
   },
   "dependencies": {
-    "@anthropic-ai/claude-agent-sdk": "0.2.72",
+    "@anthropic-ai/claude-agent-sdk": "0.2.76",
     "@anthropic-ai/sdk": "0.78.0",
     "@anthropic-ai/bedrock-sdk": "0.26.4",
     "@anthropic-ai/vertex-sdk": "0.14.4",
     "@anthropic-ai/foundry-sdk": "0.2.3",
     "@anthropic-ai/tokenizer": "0.0.4",
-    "@anthropic-ai/sandbox-runtime": "0.0.40",
+    "@anthropic-ai/sandbox-runtime": "0.0.42",
     "@anthropic-ai/dxt": "0.2.6",
     "@anthropic-ai/mcpb": "2.1.2",
     "@modelcontextprotocol/sdk": "1.27.1",
@@ -35,14 +35,14 @@
     "@modelcontextprotocol/server-filesystem": "2026.1.14",
     "@modelcontextprotocol/server-memory": "2026.1.26",
     "@modelcontextprotocol/server-sequential-thinking": "2025.12.18",
-    "zod": "4.0.0",
+    "zod": "4.3.6",
     "drizzle-orm": "0.44.0",
-    "@neondatabase/serverless": "1.0.0",
+    "@neondatabase/serverless": "1.0.2",
     "drizzle-zod": "0.7.0",
-    "lru-cache": "11.0.0"
+    "lru-cache": "11.2.7"
   },
   "devDependencies": {
-    "@anthropic-ai/claude-code": "2.1.72",
+    "@anthropic-ai/claude-code": "2.1.76",
     "drizzle-kit": "0.30.0",
     "@types/node": "^25.4.0",
     "tsx": "^4.19.0",
