@@ -6,8 +6,8 @@
  */
 
 import { crawlBlogBatch } from "./blog-crawler.js";
-import { getBlogPostWithFallback, putBlogPost, type CachedBlogPost } from "./blog-cache.js";
-import { BLOG_MANIFEST, getBlogUrls } from "./blog-manifest.js";
+import { getAllCachedHashes, putBlogPost, type CachedBlogPost } from "./blog-cache.js";
+import { BLOG_MANIFEST, BLOG_BY_URL, getBlogUrls } from "./blog-manifest.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -33,18 +33,8 @@ export async function syncBlogs(
 
   const urls = getBlogUrls();
 
-  // Build known hashes from cache
-  const knownHashes = new Map<string, string>();
-  for (const url of urls) {
-    try {
-      const existing = await getBlogPostWithFallback(url);
-      if (existing) {
-        knownHashes.set(url, existing.contentHash);
-      }
-    } catch {
-      // Skip cache read failures
-    }
-  }
+  // Batch-fetch all known hashes in a single query (avoids N+1)
+  const knownHashes = await getAllCachedHashes();
 
   // Crawl in batches
   const batchSize = 20;
@@ -57,8 +47,8 @@ export async function syncBlogs(
       for (const result of results) {
         try {
           if (result.changed) {
-            // Look up company name and tags from manifest
-            const entry = BLOG_MANIFEST.find((e) => e.url === result.url);
+            // O(1) lookup from pre-built Map
+            const entry = BLOG_BY_URL.get(result.url);
 
             const post: CachedBlogPost = {
               url: result.url,

@@ -235,6 +235,11 @@ export function getBlogUrls(): string[] {
   return BLOG_MANIFEST.map((entry) => entry.url);
 }
 
+/** Lookup table: URL → BlogEntry for O(1) access. */
+export const BLOG_BY_URL: ReadonlyMap<string, BlogEntry> = new Map(
+  BLOG_MANIFEST.map((entry) => [entry.url, entry]),
+);
+
 /** Get blog entries filtered by tag. */
 export function getBlogsByTag(tag: string): readonly BlogEntry[] {
   return BLOG_MANIFEST.filter((entry) => entry.tags?.includes(tag));

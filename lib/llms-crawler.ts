@@ -5,7 +5,7 @@
  * Each function does one thing. No classes.
  */
 
-import { createHash } from "node:crypto";
+import { hashContent } from "./hash.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -83,10 +83,8 @@ export async function fetchLlmsTxt(url: string): Promise<string> {
   return response.text();
 }
 
-/** SHA-256 hex hash of content string. Deterministic. */
-export function hashContent(content: string): string {
-  return createHash("sha256").update(content, "utf-8").digest("hex");
-}
+// hashContent is imported from lib/hash.ts (shared with blog-crawler)
+export { hashContent } from "./hash.js";
 
 /** Extract URLs from llms.txt content (lines starting with http). */
 export function extractUrls(llmsTxt: string): string[] {

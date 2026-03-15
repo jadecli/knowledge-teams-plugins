@@ -5,8 +5,8 @@
  * Reuses patterns from llms-crawler.ts. Each function does one thing.
  */
 
-import { createHash } from "node:crypto";
 import { BLOG_DOMAIN } from "./blog-manifest.js";
+import { hashContent } from "./hash.js";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -44,20 +44,22 @@ export function isAllowedBlogUrl(url: string): boolean {
   }
 }
 
-/** Extract slug from a customer blog URL. */
+/** Extract slug from a customer blog URL (e.g. /customers/stripe → "stripe"). */
 export function extractSlug(url: string): string {
-  const parsed = new URL(url);
-  const parts = parsed.pathname.split("/").filter(Boolean);
-  // /customers/stripe → "stripe"
-  return parts[parts.length - 1] ?? "";
+  try {
+    const parsed = new URL(url);
+    const parts = parsed.pathname.split("/").filter(Boolean);
+    if (parts[0] !== "customers" || parts.length < 2) return "";
+    return parts[1];
+  } catch {
+    return "";
+  }
 }
 
 // ─── Core Functions ─────────────────────────────────────────────────────────
 
-/** SHA-256 hex hash of content string. Deterministic. */
-export function hashContent(content: string): string {
-  return createHash("sha256").update(content, "utf-8").digest("hex");
-}
+// hashContent is imported from lib/hash.ts (shared with llms-crawler)
+export { hashContent } from "./hash.js";
 
 /** Fetch raw HTML content from a customer blog URL. */
 export async function fetchBlogPost(url: string): Promise<string> {

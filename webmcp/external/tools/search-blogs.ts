@@ -6,6 +6,24 @@
 
 import { z } from "zod";
 import { registerTool } from "../../shared/register.js";
+import { BLOG_MANIFEST, getBlogsByTag } from "../../../lib/blog-manifest.js";
+
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+interface BlogSearchResult {
+  company: string;
+  slug: string;
+  url: string;
+  tags?: readonly string[];
+}
+
+interface SearchBlogsOutput {
+  results: BlogSearchResult[];
+  total: number;
+  truncated: boolean;
+}
+
+// ─── Tool ───────────────────────────────────────────────────────────────────
 
 const searchBlogs = {
   name: "search-blogs",
@@ -17,23 +35,14 @@ const searchBlogs = {
     company: z.string().optional(),
     /** Filter by tag (exact match) */
     tag: z.string().optional(),
-    /** Full-text keyword search across cached content */
-    keyword: z.string().optional(),
     /** Maximum results to return */
     limit: z.number().default(10),
   }),
   handler: async (input: {
     company?: string;
     tag?: string;
-    keyword?: string;
     limit: number;
-  }): Promise<unknown> => {
-    // Stub: will query meta_blog_cache via Drizzle when database is connected
-    // For now, returns the manifest-based results
-    const { BLOG_MANIFEST, getBlogsByTag } = await import(
-      "../../../lib/blog-manifest.js"
-    );
-
+  }): Promise<SearchBlogsOutput> => {
     let results = [...BLOG_MANIFEST];
 
     if (input.company) {

@@ -23,7 +23,7 @@ export interface CachedBlogPost {
 
 // ─── LRU Cache ──────────────────────────────────────────────────────────────
 
-const lru = new LRUCache<string, CachedBlogPost>({ max: 200 });
+const lru = new LRUCache<string, CachedBlogPost>({ max: 256 });
 
 /** Get a blog post from LRU cache only. */
 export function getBlogPost(url: string): CachedBlogPost | undefined {
@@ -64,7 +64,7 @@ export async function getBlogPostWithFallback(
   return post;
 }
 
-/** Write a blog post to both LRU and Neon. */
+/** Write a blog post to both LRU and Neon (upsert by unique url index). */
 export async function putBlogPost(post: CachedBlogPost): Promise<void> {
   lru.set(post.url, post);
 
@@ -72,28 +72,44 @@ export async function putBlogPost(post: CachedBlogPost): Promise<void> {
 
   const db = getDb();
 
-  // Upsert: delete existing + insert
-  const existing = await db
-    .select({ id: metaBlogCache.id })
-    .from(metaBlogCache)
-    .where(eq(metaBlogCache.url, post.url))
-    .limit(1);
+  await db
+    .insert(metaBlogCache)
+    .values({
+      url: post.url,
+      slug: post.slug,
+      contentHash: post.contentHash,
+      content: post.content,
+      lastCrawled: post.lastCrawled,
+      company: post.company,
+      tags: post.tags,
+    })
+    .onConflictDoUpdate({
+      target: metaBlogCache.url,
+      set: {
+        slug: post.slug,
+        contentHash: post.contentHash,
+        content: post.content,
+        lastCrawled: post.lastCrawled,
+        company: post.company,
+        tags: post.tags,
+      },
+    });
+}
 
-  if (existing.length > 0) {
-    await db
-      .delete(metaBlogCache)
-      .where(eq(metaBlogCache.url, post.url));
+/** Batch-fetch all cached content hashes in a single query. Avoids N+1. */
+export async function getAllCachedHashes(): Promise<Map<string, string>> {
+  const hashes = new Map<string, string>();
+  if (!hasDatabase()) return hashes;
+
+  const db = getDb();
+  const rows = await db
+    .select({ url: metaBlogCache.url, contentHash: metaBlogCache.contentHash })
+    .from(metaBlogCache);
+
+  for (const row of rows) {
+    hashes.set(row.url, row.contentHash);
   }
-
-  await db.insert(metaBlogCache).values({
-    url: post.url,
-    slug: post.slug,
-    contentHash: post.contentHash,
-    content: post.content,
-    lastCrawled: post.lastCrawled,
-    company: post.company,
-    tags: post.tags,
-  });
+  return hashes;
 }
 
 /** Clear LRU cache (for testing). */
