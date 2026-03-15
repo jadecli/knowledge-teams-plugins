@@ -1,0 +1,53 @@
+name: Blog Crawler
+
+on:
+  schedule:
+    # Every Sunday at 6am UTC — weekly cadence, offset from weekly-audit (Mon 9am)
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      concurrency:
+        description: 'Max concurrent HTTP requests (default: 5)'
+        required: false
+        default: '5'
+
+permissions:
+  contents: read
+  issues: write
+  id-token: write
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.x
+          cache: npm
+
+      - run: npm ci
+
+      - name: Crawl and cache customer blog posts
+        run: npm run blog:sync -- ${{ github.event.inputs.concurrency || '5' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        continue-on-error: true
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Run npm run blog:sync and analyze the output.
+
+            If there are errors or significant changes (>10 posts updated), create a GitHub
+            issue titled "blog-crawl: YYYY-MM-DD report" with:
+            - Count of updated, unchanged, and errored posts
+            - List of any errors
+            - List of newly updated slugs (if any)
+
+            Label it: data-engineering
+            Only create the issue if there are errors or notable changes.
+          claude_args: "--max-turns 3"
+          show_full_output: true

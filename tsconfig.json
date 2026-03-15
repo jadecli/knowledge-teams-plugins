@@ -13,6 +13,6 @@
     "forceConsistentCasingInFileNames": true,
     "types": ["node"]
   },
-  "include": ["compose/**/*.ts", "webmcp/**/*.ts", "tests/**/*.ts", "src/**/*.ts", "scripts/**/*.ts"],
+  "include": ["compose/**/*.ts", "webmcp/**/*.ts", "tests/**/*.ts", "src/**/*.ts", "scripts/**/*.ts", "db/**/*.ts", "lib/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
