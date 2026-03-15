@@ -1,0 +1,13 @@
+{
+  "name": "blog-crawler",
+  "version": "0.1.0",
+  "description": "Data engineering knowledge worker — crawls, caches, and audits Anthropic customer blog posts for simulation test data",
+  "skills": [
+    "skills/blog-knowledge.md",
+    "skills/customer-simulation.md"
+  ],
+  "commands": [
+    "commands/blog-sync.md",
+    "commands/blog-search.md"
+  ]
+}
