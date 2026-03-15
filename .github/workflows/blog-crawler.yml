@@ -1,0 +1,82 @@
+name: Blog Crawler
+
+on:
+  schedule:
+    - cron: '0 3 * * 0'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Max sources to crawl (0 = all)'
+        required: false
+        default: '0'
+      source_slug:
+        description: 'Single source slug to crawl (blank = all)'
+        required: false
+        default: ''
+      dry_run:
+        description: 'Validate manifest without fetching'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+  issues: write
+  id-token: write
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            You are the blog-crawler data engineering agent running under the CDO role.
+
+            Execute a crawl of Anthropic customer blog posts using the manifest at
+            crawlers/blog-crawler/manifest.json.
+
+            Parameters:
+            - dry_run: ${{ inputs.dry_run || 'false' }}
+            - limit: ${{ inputs.limit || '0' }}
+            - source_slug: ${{ inputs.source_slug || '' }}
+
+            Steps:
+            1. Read crawlers/blog-crawler/manifest.json to get the source list.
+            2. For each source (respecting limit/slug filters):
+               a. Fetch https://claude.com/customers/{slug}
+               b. Extract: company_name, headline, summary, industry, use_case_summary,
+                  technologies_mentioned, quantitative_claims
+               c. Write a raw-fact JSON file to crawlers/blog-crawler/output/{slug}.json
+                  conforming to crawlers/schemas/raw-fact.schema.json
+            3. Checkpoint every 20 sources.
+            4. On completion, summarize: sources attempted, succeeded, failed, total facts extracted.
+
+            If dry_run is true, only validate the manifest and report source count.
+            Write output files with proper provenance fields (source_url, crawled_at, crawler_name, crawl_run_id).
+          claude_args: "--max-turns 30"
+          show_full_output: true
+
+      - name: Commit crawl output
+        if: ${{ inputs.dry_run != 'true' }}
+        run: |
+          git config user.name "blog-crawler[bot]"
+          git config user.email "bot@jadecli.app"
+          if [ -n "$(git status --porcelain crawlers/blog-crawler/output/)" ]; then
+            git add crawlers/blog-crawler/output/
+            git commit -m "data: blog-crawler run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi

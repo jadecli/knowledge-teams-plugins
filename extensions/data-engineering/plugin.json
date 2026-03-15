@@ -1,0 +1,14 @@
+{
+  "name": "data-engineering",
+  "version": "0.1.0",
+  "description": "Data engineering knowledge worker — cron job scheduling, crawl management, raw fact pipeline auditing",
+  "skills": [
+    "skills/cron-scheduling.md",
+    "skills/crawl-pipeline.md",
+    "skills/fact-schema-governance.md"
+  ],
+  "commands": [
+    "commands/jade-crawl.md",
+    "commands/jade-cron.md"
+  ]
+}

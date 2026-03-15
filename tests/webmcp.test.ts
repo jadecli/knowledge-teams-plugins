@@ -107,6 +107,9 @@ describe("webmcp/tools registration", () => {
     await import("../webmcp/internal/tools/submit-artifact.js");
     await import("../webmcp/internal/tools/request-checkpoint.js");
     await import("../webmcp/internal/tools/get-team-status.js");
+    await import("../webmcp/internal/tools/run-crawl.js");
+    await import("../webmcp/internal/tools/schedule-crawl.js");
+    await import("../webmcp/internal/tools/get-crawl-status.js");
 
     const names = listTools();
     expect(names).toContain("get-my-tasks");
@@ -114,6 +117,9 @@ describe("webmcp/tools registration", () => {
     expect(names).toContain("submit-artifact");
     expect(names).toContain("request-checkpoint");
     expect(names).toContain("get-team-status");
+    expect(names).toContain("run-crawl");
+    expect(names).toContain("schedule-crawl");
+    expect(names).toContain("get-crawl-status");
   });
 
   it("external tools register with correct names", async () => {

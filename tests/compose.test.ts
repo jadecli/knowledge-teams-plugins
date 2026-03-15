@@ -21,6 +21,7 @@ describe("compose/loader", () => {
     expect(names).toContain("product-management");
     expect(names).toContain("engineering");
     expect(names).toContain("enterprise-lifecycle");
+    expect(names).toContain("data-engineering");
   });
 
   it("jade-orchestrator has skills and commands", () => {
